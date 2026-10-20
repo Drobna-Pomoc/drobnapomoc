@@ -7,6 +7,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class DrobnapomocApplication {
 
 	public static void main(String[] args) {
+
+
 		SpringApplication.run(DrobnapomocApplication.class, args);
 	}
 
