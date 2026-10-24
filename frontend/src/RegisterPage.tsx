@@ -1,6 +1,12 @@
+import { Link } from "react-router-dom"
+import RegisterForm from "./RegisterForm"
+
 const RegisterPage = (() => {
     return (
-        <div>RegisterPage</div>
+        <div>
+            <RegisterForm />
+            <Link to="../login">Zaloguj się</Link>
+        </div>
     )
 })
 
