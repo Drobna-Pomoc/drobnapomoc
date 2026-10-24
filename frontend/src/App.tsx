@@ -5,28 +5,30 @@ import './App.css'
 import HomePage from './HomePage'
 import RegisterPage from './RegisterPage'
 import LoginPage from './LoginPage'
-import Nav from './Nav'
+import Header from './Header'
+import Footer from './Footer'
 
 function App() {
     const [count, setCount] = useState(0)
 
     return (
         <BrowserRouter>
-            <Nav />
+            <Header />
             <Routes>
                 <Route
-                    path="/"
+                    path='/'
                     element={<HomePage />}
                 />
                 <Route
-                    path="/register"
+                    path='/register'
                     element={<RegisterPage />}
                 />
                 <Route
-                    path="/login"
+                    path='/login'
                     element={<LoginPage />}
                 />
             </Routes>
+            <Footer />
         </BrowserRouter>
     )
 }

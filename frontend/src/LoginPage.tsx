@@ -1,11 +1,11 @@
-import { Link } from "react-router-dom"
-import LoginForm from "./LoginForm"
+import { Link } from 'react-router-dom'
+import LoginForm from './LoginForm'
 
 const LoginPage = (() => {
     return (
         <div>
             <LoginForm />
-            <Link to="../register">Zarejestruj się</Link>
+            <Link to='../register'>Zarejestruj się</Link>
         </div>
     )
 })
