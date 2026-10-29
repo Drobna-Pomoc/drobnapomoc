@@ -1,0 +1,146 @@
+openapi: 3.1.0
+
+info:
+  title: Common
+  version: 0.1.0
+  description: Shared helper file. Referenced from the other specs, it is not a standalone spec.
+
+paths: {}
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: SESSION
+      description: |
+        Session cookie, created by `POST /auth/login` and `POST /auth/register` and removed
+        by `POST /auth/logout`. The session ends after 30 minutes of inactivity.
+
+        CSRF protection: every `POST`, `PUT`, `PATCH` and `DELETE` request sent with a session
+        must carry the `X-XSRF-TOKEN` header with the value of the `XSRF-TOKEN` cookie.
+        The cookie is set by login and register. A missing or wrong token results in `403`
+        with code `CSRF_INVALID`. Login, register and logout do not require the header.
+
+  schemas:
+    ErrorResponse:
+      type: object
+      description: Body of every error response.
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Stable, machine-readable error code for the client.
+          pattern: '^[A-Z][A-Z0-9_]*$'
+          maxLength: 64
+          examples:
+            - EMAIL_TAKEN
+        message:
+          type: string
+          description: Human-readable description of the error.
+          maxLength: 1000
+          examples:
+            - Konto z tym adresem email już istnieje.
+        errors:
+          type: array
+          description: Validation details (for 422).
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/FieldError'
+          examples:
+            - - field: email
+                message: Niepoprawny format adresu email.
+
+    FieldError:
+      type: object
+      required:
+        - field
+        - message
+      properties:
+        field:
+          type: string
+          maxLength: 100
+          examples:
+            - email
+        message:
+          type: string
+          maxLength: 500
+          examples:
+            - Niepoprawny format adresu email.
+
+  responses:
+    BadRequestError:
+      description: Malformed request, e.g. invalid JSON.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            malformedBody:
+              value:
+                code: MALFORMED_REQUEST
+                message: Treść żądania nie jest poprawnym JSON-em.
+    UnauthorizedError:
+      description: No active session.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            unauthenticated:
+              value:
+                code: UNAUTHENTICATED
+                message: Wymagane zalogowanie.
+    ForbiddenError:
+      description: The current user is not allowed to perform the operation, or the CSRF token is missing or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            insufficientRole:
+              value:
+                code: ACCESS_DENIED
+                message: Brak uprawnień do tej operacji.
+            csrfInvalid:
+              value:
+                code: CSRF_INVALID
+                message: Brakujący lub niepoprawny token CSRF.
+    NotFoundError:
+      description: The resource does not exist or the current user has no access to it.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            notFound:
+              value:
+                code: NOT_FOUND
+                message: Nie znaleziono zasobu.
+    ConflictError:
+      description: State conflict, e.g. a disallowed status transition or an email that is already taken.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            conflict:
+              value:
+                code: CONFLICT
+                message: Operacja jest niedozwolona w aktualnym stanie zasobu.
+    UnprocessableEntityError:
+      description: Validation error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            validationFailed:
+              value:
+                code: VALIDATION_FAILED
+                message: Dane nie przeszły walidacji.
+                errors:
+                  - field: email
+                    message: Niepoprawny format adresu email.
