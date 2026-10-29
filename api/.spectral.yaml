@@ -1,0 +1,146 @@
+extends: spectral:oas
+
+overrides:
+  # Helper file with shared components only, it has no servers and nothing uses its components itself.
+  - files:
+      - common.yaml
+    rules:
+      oas3-api-servers: off
+      oas3-unused-component: off
+
+rules:
+  # Not relevant for an internal API.
+  info-contact: off
+  info-description: off
+
+  response-component-name:
+    description: Response components end with `Error` or `Response`.
+    severity: error
+    given: $.components.responses[*]~
+    then:
+      function: pattern
+      functionOptions:
+        match: ^[A-Z][A-Za-z0-9]*(Error|Response)$
+
+  parameter-component-name:
+    description: Parameter components end with `PathParam`, `QueryParam` or `HeaderParam`.
+    severity: error
+    given: $.components.parameters[*]~
+    then:
+      function: pattern
+      functionOptions:
+        match: ^[A-Z][A-Za-z0-9]*(PathParam|QueryParam|HeaderParam)$
+
+  request-body-component-name:
+    description: Request body components end with `RequestBody`.
+    severity: error
+    given: $.components.requestBodies[*]~
+    then:
+      function: pattern
+      functionOptions:
+        match: ^[A-Z][A-Za-z0-9]*RequestBody$
+
+  operation-id-camel-case:
+    description: operationId is camelCase.
+    severity: error
+    given: $.paths[*][get,put,post,delete,patch].operationId
+    then:
+      function: pattern
+      functionOptions:
+        match: ^[a-z][a-zA-Z0-9]*$
+
+  property-camel-case:
+    description: JSON property names are camelCase.
+    severity: error
+    given: $.components.schemas..properties[*]~
+    then:
+      function: pattern
+      functionOptions:
+        match: ^[a-z][a-zA-Z0-9]*$
+
+  enum-screaming-snake-case:
+    description: Enum values are SCREAMING_SNAKE_CASE.
+    severity: error
+    given: $..enum[*]
+    then:
+      function: pattern
+      functionOptions:
+        match: ^[A-Z][A-Z0-9_]*$
+
+  paths-only-refs:
+    description: In `paths`, parameters, request bodies and responses are `$ref`s to `components`.
+    severity: error
+    resolved: false
+    given:
+      - $.paths[*][get,put,post,delete,patch].parameters[*]
+      - $.paths[*][get,put,post,delete,patch].requestBody
+      - $.paths[*][get,put,post,delete,patch].responses[*]
+    then:
+      function: schema
+      functionOptions:
+        schema:
+          type: object
+          required:
+            - $ref
+
+  operation-access-declared:
+    description: An operation either lists `x-roles` or is explicitly public with `security` set to an empty list.
+    severity: error
+    given: $.paths[*][get,put,post,delete,patch]
+    then:
+      function: schema
+      functionOptions:
+        schema:
+          anyOf:
+            - required:
+                - x-roles
+            - required:
+                - security
+              properties:
+                security:
+                  type: array
+                  maxItems: 0
+
+  schema-property-examples:
+    description: Every schema property has `examples`.
+    severity: error
+    resolved: false
+    given: $.components.schemas[*].properties[*]
+    then:
+      function: schema
+      functionOptions:
+        schema:
+          if:
+            not:
+              required:
+                - $ref
+          then:
+            required:
+              - examples
+
+  schema-string-max-length:
+    description: String properties have `maxLength`, unless they are enums, dates or references.
+    severity: warn
+    resolved: false
+    given: $.components.schemas[*].properties[?(@.type == 'string')]
+    then:
+      function: schema
+      functionOptions:
+        schema:
+          if:
+            not:
+              anyOf:
+                - required:
+                    - $ref
+                - required:
+                    - enum
+                - properties:
+                    format:
+                      enum:
+                        - date
+                        - date-time
+                  required:
+                    - format
+          then:
+            required:
+              - maxLength
