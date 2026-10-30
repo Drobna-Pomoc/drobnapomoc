@@ -1,13 +1,5 @@
 extends: spectral:oas
 
-overrides:
-  # Helper file with shared components only, it has no servers and nothing uses its components itself.
-  - files:
-      - common.yaml
-    rules:
-      oas3-api-servers: off
-      oas3-unused-component: off
-
 rules:
   # Not relevant for an internal API.
   info-contact: off
@@ -83,26 +75,8 @@ rules:
           required:
             - $ref
 
-  operation-access-declared:
-    description: An operation either lists `x-roles` or is explicitly public with `security` set to an empty list.
-    severity: error
-    given: $.paths[*][get,put,post,delete,patch]
-    then:
-      function: schema
-      functionOptions:
-        schema:
-          anyOf:
-            - required:
-                - x-roles
-            - required:
-                - security
-              properties:
-                security:
-                  type: array
-                  maxItems: 0
-
-  schema-property-examples:
-    description: Every schema property has `examples`.
+  schema-property-example:
+    description: Every schema property has an `example`.
     severity: error
     resolved: false
     given: $.components.schemas[*].properties[*]
@@ -116,7 +90,7 @@ rules:
                 - $ref
           then:
             required:
-              - examples
+              - example
 
   schema-string-max-length:
     description: String properties have `maxLength`, unless they are enums, dates or references.

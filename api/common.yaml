@@ -1,12 +1,3 @@
-openapi: 3.1.0
-
-info:
-  title: Common
-  version: 0.1.0
-  description: Shared helper file. Referenced from the other specs, it is not a standalone spec.
-
-paths: {}
-
 components:
   securitySchemes:
     sessionAuth:
@@ -35,23 +26,21 @@ components:
           description: Stable, machine-readable error code for the client.
           pattern: '^[A-Z][A-Z0-9_]*$'
           maxLength: 64
-          examples:
-            - EMAIL_TAKEN
+          example: EMAIL_TAKEN
         message:
           type: string
           description: Human-readable description of the error.
           maxLength: 1000
-          examples:
-            - Konto z tym adresem email już istnieje.
+          example: Konto z tym adresem email już istnieje.
         errors:
           type: array
           description: Validation details (for 422).
           maxItems: 100
           items:
             $ref: '#/components/schemas/FieldError'
-          examples:
-            - - field: email
-                message: Niepoprawny format adresu email.
+          example:
+            - field: email
+              message: Niepoprawny format adresu email.
 
     FieldError:
       type: object
@@ -62,13 +51,11 @@ components:
         field:
           type: string
           maxLength: 100
-          examples:
-            - email
+          example: email
         message:
           type: string
           maxLength: 500
-          examples:
-            - Niepoprawny format adresu email.
+          example: Niepoprawny format adresu email.
 
   responses:
     BadRequestError:

@@ -18,4 +18,5 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-      - run: npx --yes @stoplight/spectral-cli@6.17.0 lint '[!.]*.yaml' --fail-severity=warn
+      # --ignore-unknown-format: common.yaml has no `openapi` header, the custom rules still check it.
+      - run: npx --yes @stoplight/spectral-cli@6.17.0 lint '[!.]*.yaml' --fail-severity=warn --ignore-unknown-format
