@@ -22,6 +22,7 @@ jobs:
     outputs:
       frontend: ${{ steps.filter.outputs.frontend }}
       backend: ${{ steps.filter.outputs.backend }}
+      api: ${{ steps.filter.outputs.api }}
     steps:
       - uses: actions/checkout@v7
       - uses: dorny/paths-filter@v4
@@ -34,8 +35,14 @@ jobs:
               - '.github/workflows/frontend-ci.yml'
             backend:
               - 'backend/**'
+              # The backend generates code from the specs.
+              - 'api/**'
               - '.github/workflows/ci.yml'
               - '.github/workflows/backend-ci.yml'
+            api:
+              - 'api/**'
+              - '.github/workflows/ci.yml'
+              - '.github/workflows/api-ci.yml'
 
   frontend:
     needs: changes
@@ -47,8 +54,13 @@ jobs:
     if: needs.changes.outputs.backend == 'true'
     uses: ./.github/workflows/backend-ci.yml
 
+  api:
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
+    uses: ./.github/workflows/api-ci.yml
+
   ci-ok:
-    needs: [changes, frontend, backend]
+    needs: [changes, frontend, backend, api]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 2
@@ -58,7 +70,9 @@ jobs:
           CHANGES: ${{  needs.changes.result  }}
           FRONTEND: ${{ needs.frontend.result }}
           BACKEND: ${{ needs.backend.result }}
+          API: ${{ needs.api.result }}
         run: |
           [[ "$CHANGES" == "success" ]]
           [[ "$FRONTEND" == "success" || "$FRONTEND" == "skipped" ]]
           [[ "$BACKEND" == "success" || "$BACKEND" == "skipped" ]]
+          [[ "$API" == "success" || "$API" == "skipped" ]]

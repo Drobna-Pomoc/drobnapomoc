@@ -1,0 +1,120 @@
+extends: spectral:oas
+
+rules:
+  # Not relevant for an internal API.
+  info-contact: off
+  info-description: off
+
+  response-component-name:
+    description: Response components end with `Error` or `Response`.
+    severity: error
+    given: $.components.responses[*]~
+    then:
+      function: pattern
+      functionOptions:
+        match: ^[A-Z][A-Za-z0-9]*(Error|Response)$
+
+  parameter-component-name:
+    description: Parameter components end with `PathParam`, `QueryParam` or `HeaderParam`.
+    severity: error
+    given: $.components.parameters[*]~
+    then:
+      function: pattern
+      functionOptions:
+        match: ^[A-Z][A-Za-z0-9]*(PathParam|QueryParam|HeaderParam)$
+
+  request-body-component-name:
+    description: Request body components end with `RequestBody`.
+    severity: error
+    given: $.components.requestBodies[*]~
+    then:
+      function: pattern
+      functionOptions:
+        match: ^[A-Z][A-Za-z0-9]*RequestBody$
+
+  operation-id-camel-case:
+    description: operationId is camelCase.
+    severity: error
+    given: $.paths[*][get,put,post,delete,patch].operationId
+    then:
+      function: pattern
+      functionOptions:
+        match: ^[a-z][a-zA-Z0-9]*$
+
+  property-camel-case:
+    description: JSON property names are camelCase.
+    severity: error
+    given: $.components.schemas..properties[*]~
+    then:
+      function: pattern
+      functionOptions:
+        match: ^[a-z][a-zA-Z0-9]*$
+
+  enum-screaming-snake-case:
+    description: Enum values are SCREAMING_SNAKE_CASE.
+    severity: error
+    given: $..enum[*]
+    then:
+      function: pattern
+      functionOptions:
+        match: ^[A-Z][A-Z0-9_]*$
+
+  paths-only-refs:
+    description: In `paths`, parameters, request bodies and responses are `$ref`s to `components`.
+    severity: error
+    resolved: false
+    given:
+      - $.paths[*][get,put,post,delete,patch].parameters[*]
+      - $.paths[*][get,put,post,delete,patch].requestBody
+      - $.paths[*][get,put,post,delete,patch].responses[*]
+    then:
+      function: schema
+      functionOptions:
+        schema:
+          type: object
+          required:
+            - $ref
+
+  schema-property-example:
+    description: Every schema property has an `example`.
+    severity: error
+    resolved: false
+    given: $.components.schemas[*].properties[*]
+    then:
+      function: schema
+      functionOptions:
+        schema:
+          if:
+            not:
+              required:
+                - $ref
+          then:
+            required:
+              - example
+
+  schema-string-max-length:
+    description: String properties have `maxLength`, unless they are enums, dates or references.
+    severity: warn
+    resolved: false
+    given: $.components.schemas[*].properties[?(@.type == 'string')]
+    then:
+      function: schema
+      functionOptions:
+        schema:
+          if:
+            not:
+              anyOf:
+                - required:
+                    - $ref
+                - required:
+                    - enum
+                - properties:
+                    format:
+                      enum:
+                        - date
+                        - date-time
+                  required:
+                    - format
+          then:
+            required:
+              - maxLength
