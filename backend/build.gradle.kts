@@ -28,6 +28,14 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-jdbc")
 	implementation("org.springframework.boot:spring-boot-starter-flyway")
+	implementation("org.mapstruct:mapstruct:1.6.3")
+	implementation("org.jspecify:jspecify:1.0.1")
+	compileOnly("org.projectlombok:lombok")
+	annotationProcessor("org.projectlombok:lombok")
+	annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
+	annotationProcessor("org.projectlombok:lombok-mapstruct-binding:0.2.0")
+	testCompileOnly("org.projectlombok:lombok")
+	testAnnotationProcessor("org.projectlombok:lombok")
 	runtimeOnly("org.flywaydb:flyway-database-postgresql")
 	runtimeOnly("org.postgresql:postgresql")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -57,11 +65,10 @@ apiSpecs.forEach { spec ->
 		apiPackage.set("com.drobnapomoc.drobnapomoc.api")
 		modelPackage.set("com.drobnapomoc.drobnapomoc.api.model")
 		modelNameSuffix.set("Rest")
-		globalProperties.set(mapOf("apis" to "", "models" to "", "supportingFiles" to "none"))
+		globalProperties.set(mapOf("apis" to "", "models" to "", "supportingFiles" to "ApiUtil.java"))
 		configOptions.set(
 			mapOf(
-				"interfaceOnly" to "true",
-				"skipDefaultInterface" to "true",
+				"delegatePattern" to "true",
 				"useSpringBoot4" to "true",
 				"useJackson3" to "true",
 				"useTags" to "true",
