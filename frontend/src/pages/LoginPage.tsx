@@ -3,7 +3,7 @@ import LoginForm from '../components/specific/LoginForm'
 
 const LoginPage = (() => {
     return (
-        <div>
+        <div style={{ padding: '40px', textAlign: 'center'}}>
             <LoginForm />
             <Link to='../register'>Zarejestruj się</Link>
         </div>

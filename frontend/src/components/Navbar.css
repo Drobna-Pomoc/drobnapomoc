@@ -1,0 +1,31 @@
+.navbar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 40px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.navbar-link {
+  text-decoration: none;
+  color: #334155;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 8px 18px;
+  border-radius: 20px;
+  transition: all 0.2s;
+}
+
+.navbar-link:hover {
+  background-color: #f1f5f9;
+  color: #1e3a8a;
+}
+
+.navbar-link.active {
+  background-color: #eff6ff;
+  color: #1e3a8a;
+  font-weight: 600;
+}

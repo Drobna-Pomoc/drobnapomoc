@@ -1,6 +1,8 @@
 const HomePage = (() => {
     return (
-        <div>HomePage</div>
+        <div style={{ padding: '40px', textAlign: 'center'}}>
+            Strona Główna
+        </div>
     )
 })
 
