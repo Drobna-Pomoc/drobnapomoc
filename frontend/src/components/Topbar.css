@@ -1,0 +1,92 @@
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 40px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* 1. Lewa sekcja - Logo */
+.topbar-left {
+  flex: 1;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.topbar-logo {
+  height: 55px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* 2. Środkowa sekcja - Numer telefonu */
+.topbar-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.topbar-phone-label {
+  font-size: 14px;
+  color: #718096;
+}
+
+.topbar-phone-number {
+  font-size: 32px;
+  color: #1e3a8a;
+  margin-top: 2px;
+}
+
+/* Prawa sekcja - przyciski */
+.topbar-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px; 
+}
+
+.topbar-btn {
+  width: 180px;
+  padding: 8px 16px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 2px;
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.2s;
+}
+
+.topbar-btn-login {
+  background-color: #ffffff;
+  color: #1e3a8a;
+  border: 2px solid #1e3a8a;
+}
+
+.topbar-btn-login:hover {
+  background-color: #eff6ff;
+}
+
+.topbar-btn-register {
+  background-color: #1e3a8a;
+  color: #ffffff;
+  border: 2px solid #1e3a8a;
+}
+
+.topbar-btn-register:hover {
+  background-color: #172554;
+}
+
+.topbar-btn-panel {
+  background-color: #ea580c; 
+  color: #ffffff;
+  border: 2px solid #ea580c;
+  padding: 12px 16px;
+}
+
+.topbar-btn-panel:hover {
+  background-color: #c2410c;
+}
