@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom'
-import LoginForm from './LoginForm'
+import LoginForm from '../components/specific/LoginForm'
 
 const LoginPage = (() => {
     return (
-        <div>
+        <div style={{ padding: '40px', textAlign: 'center'}}>
             <LoginForm />
             <Link to='../register'>Zarejestruj się</Link>
         </div>
