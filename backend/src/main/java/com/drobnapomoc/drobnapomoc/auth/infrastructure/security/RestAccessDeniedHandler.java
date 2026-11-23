@@ -2,41 +2,30 @@ package com.drobnapomoc.drobnapomoc.auth.infrastructure.security;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.MediaType;
+import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NullMarked;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.access.AccessDeniedHandler;
-import org.springframework.security.web.csrf.CsrfException;
 import org.springframework.stereotype.Component;
-
-import java.io.IOException;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 @Component
+@RequiredArgsConstructor
+@NullMarked
 public class RestAccessDeniedHandler implements AccessDeniedHandler {
+
+    @Qualifier("handlerExceptionResolver")
+    private final HandlerExceptionResolver resolver;
 
     @Override
     public void handle(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            AccessDeniedException accessDeniedException
-    ) throws IOException {
-        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setCharacterEncoding("UTF-8");
-
-        if (accessDeniedException instanceof CsrfException) {
-            response.getWriter().write("""
-                    {
-                        "code": "CSRF_INVALID",
-                        "message": "Brakujący lub niepoprawny token CSRF."
-                    }
-                    """);
-        } else {
-            response.getWriter().write("""
-                    {
-                        "code": "ACCESS_DENIED",
-                        "message": "Brak uprawnień do tej operacji."
-                    }
-                    """);
-        }
+            final HttpServletRequest request,
+            final HttpServletResponse response,
+            final AccessDeniedException accessDeniedException
+    ) {
+        resolver.resolveException(request, response, null, accessDeniedException);
     }
 }
+
+

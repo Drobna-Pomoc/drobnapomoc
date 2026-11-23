@@ -2,30 +2,28 @@ package com.drobnapomoc.drobnapomoc.auth.infrastructure.security;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.MediaType;
+import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NullMarked;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
-
-import java.io.IOException;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 @Component
+@RequiredArgsConstructor
+@NullMarked
 public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
+
+    @Qualifier("handlerExceptionResolver")
+    private final HandlerExceptionResolver resolver;
 
     @Override
     public void commence(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            AuthenticationException authException
-    ) throws IOException {
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setCharacterEncoding("UTF-8");
-        response.getWriter().write("""
-                {
-                    "code": "UNAUTHENTICATED",
-                    "message": "Wymagane zalogowanie."
-                }
-                """);
+            final HttpServletRequest request,
+            final HttpServletResponse response,
+            final AuthenticationException authException
+    ) {
+        resolver.resolveException(request, response, null, authException);
     }
 }
