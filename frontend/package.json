@@ -6,13 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run codegen && tsc -b && vite build",
-    "lint": "eslint .",
+    "lint": "npm run codegen && eslint .",
     "preview": "vite preview",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
     "codegen": "orval",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test": "npm run codegen && vitest run",
+    "test:coverage": "npm run codegen && vitest run --coverage"
   },
   "dependencies": {
     "@tanstack/react-router": "^1.170.46",
