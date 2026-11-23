@@ -54,7 +54,7 @@ class AuthServiceTest {
     @DisplayName("Powinna zarejestrować nowego użytkownika z rolą CLIENT i utworzyć sesję")
     void shouldRegisterNewUserSuccessfully() {
         // given
-        var command = new RegisterUserCommand(
+        final var command = new RegisterUserCommand(
                 "anna.kowalska@example.com",
                 "Haslo123!",
                 "Anna",
@@ -66,7 +66,7 @@ class AuthServiceTest {
         when(passwordEncoder.encode("Haslo123!")).thenReturn("hashed-password-123");
         when(accountRepository.insert(any(Account.class))).thenReturn(1L);
 
-        var savedAccount = new Account(
+        final var savedAccount = new Account(
                 1L,
                 "anna.kowalska@example.com",
                 "hashed-password-123",
@@ -81,7 +81,7 @@ class AuthServiceTest {
         when(accountRepository.findById(1L)).thenReturn(Optional.of(savedAccount));
 
         // when
-        CurrentUserDto result = authService.register(command);
+        final var result = authService.register(command);
 
         // then
         assertThat(result.id()).isEqualTo(1L);
@@ -98,7 +98,7 @@ class AuthServiceTest {
     @DisplayName("Powinna rzucić EmailAlreadyTakenException gdy email jest już zajęty")
     void shouldThrowEmailTakenExceptionWhenEmailAlreadyExists() {
         // given
-        var command = new RegisterUserCommand(
+        final var command = new RegisterUserCommand(
                 "anna.kowalska@example.com",
                 "Haslo123!",
                 "Anna",
@@ -117,8 +117,8 @@ class AuthServiceTest {
     @DisplayName("Powinna zalogować użytkownika przy poprawnych danych i utworzyć sesję")
     void shouldLoginSuccessfullyWithValidCredentials() {
         // given
-        var command = new LoginUserCommand("anna.kowalska@example.com", "Haslo123!");
-        var account = new Account(
+        final var command = new LoginUserCommand("anna.kowalska@example.com", "Haslo123!");
+        final var account = new Account(
                 1L,
                 "anna.kowalska@example.com",
                 "hashed-password-123",
@@ -135,7 +135,7 @@ class AuthServiceTest {
         when(passwordEncoder.matches("Haslo123!", "hashed-password-123")).thenReturn(true);
 
         // when
-        CurrentUserDto result = authService.login(command);
+        final var result = authService.login(command);
 
         // then
         assertThat(result.id()).isEqualTo(1L);
@@ -147,8 +147,8 @@ class AuthServiceTest {
     @DisplayName("Powinna rzucić InvalidCredentialsException przy błędnym haśle")
     void shouldThrowInvalidCredentialsExceptionWhenPasswordDoesNotMatch() {
         // given
-        var command = new LoginUserCommand("anna.kowalska@example.com", "ZleHaslo");
-        var account = new Account(
+        final var command = new LoginUserCommand("anna.kowalska@example.com", "ZleHaslo");
+        final var account = new Account(
                 1L,
                 "anna.kowalska@example.com",
                 "hashed-password-123",
@@ -173,7 +173,7 @@ class AuthServiceTest {
     @DisplayName("Powinna rzucić InvalidCredentialsException gdy konto nie istnieje")
     void shouldThrowInvalidCredentialsExceptionWhenAccountDoesNotExist() {
         // given
-        var command = new LoginUserCommand("nieistnieje@example.com", "Haslo123!");
+        final var command = new LoginUserCommand("nieistnieje@example.com", "Haslo123!");
         when(accountRepository.findByEmail("nieistnieje@example.com")).thenReturn(Optional.empty());
 
         // when & then
@@ -185,8 +185,8 @@ class AuthServiceTest {
     @DisplayName("Powinna rzucić AccountSuspendedException gdy konto jest zawieszone")
     void shouldThrowAccountSuspendedExceptionWhenAccountIsSuspended() {
         // given
-        var command = new LoginUserCommand("zawieszony@example.com", "Haslo123!");
-        var account = new Account(
+        final var command = new LoginUserCommand("zawieszony@example.com", "Haslo123!");
+        final var account = new Account(
                 2L,
                 "zawieszony@example.com",
                 "hashed-password-123",
@@ -221,7 +221,7 @@ class AuthServiceTest {
     @DisplayName("Powinna zwrócić zalogowanego użytkownika")
     void shouldGetCurrentUserSuccessfully() {
         // given
-        var account = new Account(
+        final var account = new Account(
                 1L,
                 "anna.kowalska@example.com",
                 "hashed-password-123",
@@ -238,7 +238,7 @@ class AuthServiceTest {
         when(accountRepository.findById(1L)).thenReturn(Optional.of(account));
 
         // when
-        CurrentUserDto result = authService.getCurrentUser();
+        final var result = authService.getCurrentUser();
 
         // then
         assertThat(result.id()).isEqualTo(1L);

@@ -47,11 +47,11 @@ public record Account(
     }
 
     public static Account createClient(
-            String email,
-            String passwordHash,
-            String firstName,
-            String lastName,
-            String phone
+            final String email,
+            final String passwordHash,
+            final String firstName,
+            final String lastName,
+            final String phone
     ) {
         return new Account(
                 null,
@@ -75,7 +75,7 @@ public record Account(
         return status == AccountStatus.SUSPENDED;
     }
 
-    public boolean hasRole(AccountRole role) {
+    public boolean hasRole(final AccountRole role) {
         Objects.requireNonNull(role, "Role cannot be null");
         return roles.contains(role);
     }

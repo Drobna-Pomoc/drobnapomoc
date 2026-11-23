@@ -28,17 +28,17 @@ public class SpringSessionManagerAdapter implements SessionManagerPort {
     private final SecurityContextRepository securityContextRepository;
 
     @Override
-    public void createSession(Account account) {
+    public void createSession(final Account account) {
         Objects.requireNonNull(account.id(), "Konto musi posiadać identyfikator ID.");
 
-        var principal = new UserPrincipal(account.id(), account.email(), account.roles());
-        var authentication = new UsernamePasswordAuthenticationToken(
+        final var principal = new UserPrincipal(account.id(), account.email(), account.roles());
+        final var authentication = new UsernamePasswordAuthenticationToken(
                 principal,
                 null,
                 principal.getAuthorities()
         );
 
-        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        final var context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authentication);
         SecurityContextHolder.setContext(context);
 
@@ -48,7 +48,7 @@ public class SpringSessionManagerAdapter implements SessionManagerPort {
 
     @Override
     public void invalidateSession() {
-        HttpSession session = request.getSession(false);
+        final var session = request.getSession(false);
         if (session != null) {
             session.invalidate();
         }
@@ -57,13 +57,13 @@ public class SpringSessionManagerAdapter implements SessionManagerPort {
 
     @Override
     public long getAuthenticatedAccountId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        final var authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
             throw new UnauthenticatedException();
         }
 
-        Object principal = authentication.getPrincipal();
+        final var principal = authentication.getPrincipal();
         if (principal instanceof UserPrincipal userPrincipal) {
             return userPrincipal.id();
         }

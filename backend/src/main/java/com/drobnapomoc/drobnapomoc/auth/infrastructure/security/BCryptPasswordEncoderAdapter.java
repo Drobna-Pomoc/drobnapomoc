@@ -14,12 +14,12 @@ public class BCryptPasswordEncoderAdapter implements PasswordEncoderPort {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public String encode(CharSequence rawPassword) {
+    public String encode(final CharSequence rawPassword) {
         return passwordEncoder.encode(rawPassword);
     }
 
     @Override
-    public boolean matches(CharSequence rawPassword, String encodedPassword) {
+    public boolean matches(final CharSequence rawPassword, final String encodedPassword) {
         return passwordEncoder.matches(rawPassword, encodedPassword);
     }
 }

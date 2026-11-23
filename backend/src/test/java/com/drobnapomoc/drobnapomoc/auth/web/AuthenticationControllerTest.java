@@ -57,15 +57,15 @@ class AuthenticationControllerTest {
 
     @BeforeEach
     void setUp() {
-        AuthWebMapper authWebMapper = Mappers.getMapper(AuthWebMapper.class);
-        AuthenticationApiDelegateImpl delegate = new AuthenticationApiDelegateImpl(
+        final var authWebMapper = Mappers.getMapper(AuthWebMapper.class);
+        final var delegate = new AuthenticationApiDelegateImpl(
                 registerUserUseCase,
                 loginUserUseCase,
                 logoutUserUseCase,
                 getCurrentUserUseCase,
                 authWebMapper
         );
-        AuthenticationApiController controller = new AuthenticationApiController(delegate);
+        final var controller = new AuthenticationApiController(delegate);
 
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setControllerAdvice(new GlobalExceptionHandler())
@@ -76,7 +76,7 @@ class AuthenticationControllerTest {
     @DisplayName("POST /v1/auth/register powinna zwrócić 201 i zarejestrowanego użytkownika")
     void shouldRegisterAndReturnCreated() throws Exception {
         // given
-        var input = new RegisterInputRest(
+        final var input = new RegisterInputRest(
                 "anna.kowalska@example.com",
                 "Zielony-Rower-42",
                 "Anna",
@@ -84,7 +84,7 @@ class AuthenticationControllerTest {
                 "+48123456789"
         );
 
-        var currentUserDto = new CurrentUserDto(
+        final var currentUserDto = new CurrentUserDto(
                 123L,
                 "anna.kowalska@example.com",
                 "Anna",
@@ -112,7 +112,7 @@ class AuthenticationControllerTest {
     @DisplayName("POST /v1/auth/register powinna zwrócić 409 gdy email jest zajęty")
     void shouldReturnConflictWhenEmailTaken() throws Exception {
         // given
-        var input = new RegisterInputRest(
+        final var input = new RegisterInputRest(
                 "anna.kowalska@example.com",
                 "Zielony-Rower-42",
                 "Anna",
@@ -136,8 +136,8 @@ class AuthenticationControllerTest {
     @DisplayName("POST /v1/auth/login powinna zwrócić 200 i zalogowanego użytkownika")
     void shouldLoginAndReturnCurrentUser() throws Exception {
         // given
-        var input = new LoginInputRest("anna.kowalska@example.com", "Zielony-Rower-42");
-        var currentUserDto = new CurrentUserDto(
+        final var input = new LoginInputRest("anna.kowalska@example.com", "Zielony-Rower-42");
+        final var currentUserDto = new CurrentUserDto(
                 123L,
                 "anna.kowalska@example.com",
                 "Anna",
@@ -161,7 +161,7 @@ class AuthenticationControllerTest {
     @DisplayName("POST /v1/auth/login powinna zwrócić 401 przy błędnych danych logowania")
     void shouldReturnUnauthorizedWhenInvalidCredentials() throws Exception {
         // given
-        var input = new LoginInputRest("anna.kowalska@example.com", "ZleHaslo");
+        final var input = new LoginInputRest("anna.kowalska@example.com", "ZleHaslo");
         when(loginUserUseCase.login(any(LoginUserCommand.class)))
                 .thenThrow(new InvalidCredentialsException());
 
@@ -178,7 +178,7 @@ class AuthenticationControllerTest {
     @DisplayName("POST /v1/auth/login powinna zwrócić 403 gdy konto jest zawieszone")
     void shouldReturnForbiddenWhenAccountSuspended() throws Exception {
         // given
-        var input = new LoginInputRest("zawieszony@example.com", "Zielony-Rower-42");
+        final var input = new LoginInputRest("zawieszony@example.com", "Zielony-Rower-42");
         when(loginUserUseCase.login(any(LoginUserCommand.class)))
                 .thenThrow(new AccountSuspendedException());
 
@@ -206,7 +206,7 @@ class AuthenticationControllerTest {
     @DisplayName("GET /v1/auth/me powinna zwrócić 200 i dane zalogowanego użytkownika")
     void shouldGetCurrentUser() throws Exception {
         // given
-        var currentUserDto = new CurrentUserDto(
+        final var currentUserDto = new CurrentUserDto(
                 123L,
                 "anna.kowalska@example.com",
                 "Anna",

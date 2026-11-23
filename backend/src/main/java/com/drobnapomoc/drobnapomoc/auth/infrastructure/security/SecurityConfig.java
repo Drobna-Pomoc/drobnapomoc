@@ -3,6 +3,8 @@ package com.drobnapomoc.drobnapomoc.auth.infrastructure.security;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -26,6 +28,7 @@ import java.util.function.Supplier;
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
+@NullMarked
 public class SecurityConfig {
 
     private final RestAuthenticationEntryPoint authenticationEntryPoint;
@@ -43,8 +46,8 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(
-            HttpSecurity http,
-            SecurityContextRepository securityContextRepository
+            final HttpSecurity http,
+            final SecurityContextRepository securityContextRepository
     ) throws Exception {
         http
                 .securityContext(context -> context.securityContextRepository(securityContextRepository))
@@ -71,13 +74,13 @@ public class SecurityConfig {
         private final CsrfTokenRequestHandler delegate = new XorCsrfTokenRequestAttributeHandler();
 
         @Override
-        public void handle(HttpServletRequest request, HttpServletResponse response, Supplier<CsrfToken> csrfToken) {
+        public void handle(final HttpServletRequest request, final HttpServletResponse response, final Supplier<CsrfToken> csrfToken) {
             this.delegate.handle(request, response, csrfToken);
         }
 
         @Override
-        public String resolveCsrfTokenValue(HttpServletRequest request, CsrfToken csrfToken) {
-            String headerValue = request.getHeader(csrfToken.getHeaderName());
+        public @Nullable String resolveCsrfTokenValue(final HttpServletRequest request, final CsrfToken csrfToken) {
+            final var headerValue = request.getHeader(csrfToken.getHeaderName());
             return StringUtils.hasText(headerValue)
                     ? super.resolveCsrfTokenValue(request, csrfToken)
                     : this.delegate.resolveCsrfTokenValue(request, csrfToken);

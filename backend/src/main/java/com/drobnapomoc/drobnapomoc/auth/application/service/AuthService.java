@@ -31,16 +31,16 @@ public class AuthService implements RegisterUserUseCase, LoginUserUseCase, Logou
 
     @Override
     @Transactional
-    public CurrentUserDto register(RegisterUserCommand command) {
-        String normalizedEmail = command.email().trim().toLowerCase();
+    public CurrentUserDto register(final RegisterUserCommand command) {
+        final var normalizedEmail = command.email().trim().toLowerCase();
 
         if (accountRepository.existsByEmail(normalizedEmail)) {
             throw new EmailAlreadyTakenException(normalizedEmail);
         }
 
-        String encodedPassword = passwordEncoder.encode(command.password());
+        final var encodedPassword = passwordEncoder.encode(command.password());
 
-        Account newAccount = Account.createClient(
+        final var newAccount = Account.createClient(
                 normalizedEmail,
                 encodedPassword,
                 command.firstName().trim(),
@@ -48,9 +48,9 @@ public class AuthService implements RegisterUserUseCase, LoginUserUseCase, Logou
                 command.phone().trim()
         );
 
-        long accountId = accountRepository.insert(newAccount);
+        final var accountId = accountRepository.insert(newAccount);
 
-        Account savedAccount = accountRepository.findById(accountId)
+        final var savedAccount = accountRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalStateException("Nie odnaleziono zapisanego konta o id " + accountId));
 
         sessionManager.createSession(savedAccount);
@@ -60,10 +60,10 @@ public class AuthService implements RegisterUserUseCase, LoginUserUseCase, Logou
 
     @Override
     @Transactional(readOnly = true)
-    public CurrentUserDto login(LoginUserCommand command) {
-        String normalizedEmail = command.email().trim().toLowerCase();
+    public CurrentUserDto login(final LoginUserCommand command) {
+        final var normalizedEmail = command.email().trim().toLowerCase();
 
-        Account account = accountRepository.findByEmail(normalizedEmail)
+        final var account = accountRepository.findByEmail(normalizedEmail)
                 .orElseThrow(InvalidCredentialsException::new);
 
         if (!passwordEncoder.matches(command.password(), account.passwordHash())) {
@@ -87,9 +87,9 @@ public class AuthService implements RegisterUserUseCase, LoginUserUseCase, Logou
     @Override
     @Transactional(readOnly = true)
     public CurrentUserDto getCurrentUser() {
-        long accountId = sessionManager.getAuthenticatedAccountId();
+        final var accountId = sessionManager.getAuthenticatedAccountId();
 
-        Account account = accountRepository.findById(accountId)
+        final var account = accountRepository.findById(accountId)
                 .orElseThrow(UnauthenticatedException::new);
 
         if (account.isSuspended()) {
@@ -100,7 +100,7 @@ public class AuthService implements RegisterUserUseCase, LoginUserUseCase, Logou
         return toCurrentUserDto(account);
     }
 
-    private CurrentUserDto toCurrentUserDto(Account account) {
+    private CurrentUserDto toCurrentUserDto(final Account account) {
         if (account.id() == null) {
             throw new IllegalStateException("Konto musi posiadać identyfikator ID.");
         }

@@ -43,8 +43,8 @@ public class AccountRepositoryImpl implements AccountRepository {
     ) {}
 
     @Override
-    public Optional<Account> findById(long id) {
-        var accountData = jdbcClient.sql(BASE_SELECT + " WHERE id = :id")
+    public Optional<Account> findById(final long id) {
+        final var accountData = jdbcClient.sql(BASE_SELECT + " WHERE id = :id")
                 .param("id", id)
                 .query((rs, rowNum) -> new AccountRow(
                         rs.getLong("id"),
@@ -63,8 +63,8 @@ public class AccountRepositoryImpl implements AccountRepository {
     }
 
     @Override
-    public Optional<Account> findByEmail(String email) {
-        var accountData = jdbcClient.sql(BASE_SELECT + " WHERE lower(email) = lower(:email)")
+    public Optional<Account> findByEmail(final String email) {
+        final var accountData = jdbcClient.sql(BASE_SELECT + " WHERE lower(email) = lower(:email)")
                 .param("email", email.trim())
                 .query((rs, rowNum) -> new AccountRow(
                         rs.getLong("id"),
@@ -83,8 +83,8 @@ public class AccountRepositoryImpl implements AccountRepository {
     }
 
     @Override
-    public boolean existsByEmail(String email) {
-        Long count = jdbcClient.sql("SELECT COUNT(*) FROM account WHERE lower(email) = lower(:email)")
+    public boolean existsByEmail(final String email) {
+        final var count = jdbcClient.sql("SELECT COUNT(*) FROM account WHERE lower(email) = lower(:email)")
                 .param("email", email.trim())
                 .query(Long.class)
                 .single();
@@ -93,10 +93,10 @@ public class AccountRepositoryImpl implements AccountRepository {
     }
 
     @Override
-    public long insert(Account account) {
+    public long insert(final Account account) {
         Objects.requireNonNull(account, "Account cannot be null");
 
-        var sql = """
+        final var sql = """
                 INSERT INTO account (
                     email, password_hash, first_name, last_name, phone, status
                 )
@@ -106,7 +106,7 @@ public class AccountRepositoryImpl implements AccountRepository {
                 RETURNING id
                 """;
 
-        Long id = jdbcClient.sql(sql)
+        final var id = jdbcClient.sql(sql)
                 .param("email", account.email())
                 .param("passwordHash", account.passwordHash())
                 .param("firstName", account.firstName())
@@ -118,7 +118,7 @@ public class AccountRepositoryImpl implements AccountRepository {
 
         Objects.requireNonNull(id, "Generated id cannot be null");
 
-        for (AccountRole role : account.roles()) {
+        for (final var role : account.roles()) {
             jdbcClient.sql("""
                     INSERT INTO account_role (account_id, role)
                     VALUES (:accountId, :role::account_role_type)
@@ -132,10 +132,10 @@ public class AccountRepositoryImpl implements AccountRepository {
     }
 
     @Override
-    public boolean update(Account account) {
+    public boolean update(final Account account) {
         Objects.requireNonNull(account.id(), "Cannot update account without ID");
 
-        var sql = """
+        final var sql = """
                 UPDATE account
                 SET email = :email,
                     password_hash = :passwordHash,
@@ -147,7 +147,7 @@ public class AccountRepositoryImpl implements AccountRepository {
                 WHERE id = :id
                 """;
 
-        int updated = jdbcClient.sql(sql)
+        final var updated = jdbcClient.sql(sql)
                 .param("id", account.id())
                 .param("email", account.email())
                 .param("passwordHash", account.passwordHash())
@@ -162,7 +162,7 @@ public class AccountRepositoryImpl implements AccountRepository {
                 .param("accountId", account.id())
                 .update();
 
-        for (AccountRole role : account.roles()) {
+        for (final var role : account.roles()) {
             jdbcClient.sql("""
                     INSERT INTO account_role (account_id, role)
                     VALUES (:accountId, :role::account_role_type)
@@ -175,8 +175,8 @@ public class AccountRepositoryImpl implements AccountRepository {
         return updated > 0;
     }
 
-    private Account mapToAccount(AccountRow row) {
-        Set<AccountRole> roles = findRolesByAccountId(row.id());
+    private Account mapToAccount(final AccountRow row) {
+        final var roles = findRolesByAccountId(row.id());
 
         return new Account(
                 row.id(),
@@ -192,14 +192,14 @@ public class AccountRepositoryImpl implements AccountRepository {
         );
     }
 
-    private Set<AccountRole> findRolesByAccountId(long accountId) {
-        List<String> roleStrings = jdbcClient.sql("SELECT role FROM account_role WHERE account_id = :accountId")
+    private Set<AccountRole> findRolesByAccountId(final long accountId) {
+        final var roleStrings = jdbcClient.sql("SELECT role FROM account_role WHERE account_id = :accountId")
                 .param("accountId", accountId)
                 .query(String.class)
                 .list();
 
         return roleStrings.stream()
                 .map(AccountRole::valueOf)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toUnmodifiableSet());
     }
 }

@@ -16,7 +16,7 @@ class AccountTest {
     @DisplayName("Powinno utworzyć klienta za pomocą metody fabrycznej createClient")
     void shouldCreateClientCorrectly() {
         // when
-        Account account = Account.createClient(
+        final var account = Account.createClient(
                 "anna.kowalska@example.com",
                 "hashedPass",
                 "Anna",
@@ -59,10 +59,10 @@ class AccountTest {
     @Test
     @DisplayName("Powinno zapewnić niemutowalność zbioru ról")
     void shouldEnsureRolesImmutability() {
-        Set<AccountRole> mutableRoles = new HashSet<>();
+        final var mutableRoles = new HashSet<AccountRole>();
         mutableRoles.add(AccountRole.CLIENT);
 
-        Account account = new Account(
+        final var account = new Account(
                 1L,
                 "anna@example.com",
                 "hashed",

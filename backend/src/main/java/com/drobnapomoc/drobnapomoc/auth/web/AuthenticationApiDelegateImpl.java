@@ -29,30 +29,30 @@ public class AuthenticationApiDelegateImpl implements AuthenticationApiDelegate 
     private final AuthWebMapper mapper;
 
     @Override
-    public ResponseEntity<CurrentUserRest> register(RegisterInputRest registerInputRest, HttpServletRequest servletRequest) {
+    public ResponseEntity<CurrentUserRest> register(final RegisterInputRest registerInputRest, final HttpServletRequest servletRequest) {
         Objects.requireNonNull(registerInputRest, "Dane rejestracji nie mogą być puste");
-        var command = mapper.toCommand(registerInputRest);
-        var created = registerUserUseCase.register(command);
+        final var command = mapper.toCommand(registerInputRest);
+        final var created = registerUserUseCase.register(command);
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toRest(created));
     }
 
     @Override
-    public ResponseEntity<CurrentUserRest> login(LoginInputRest loginInputRest, HttpServletRequest servletRequest) {
+    public ResponseEntity<CurrentUserRest> login(final LoginInputRest loginInputRest, final HttpServletRequest servletRequest) {
         Objects.requireNonNull(loginInputRest, "Dane logowania nie mogą być puste");
-        var command = mapper.toCommand(loginInputRest);
-        var user = loginUserUseCase.login(command);
+        final var command = mapper.toCommand(loginInputRest);
+        final var user = loginUserUseCase.login(command);
         return ResponseEntity.ok(mapper.toRest(user));
     }
 
     @Override
-    public ResponseEntity<Void> logout(HttpServletRequest servletRequest) {
+    public ResponseEntity<Void> logout(final HttpServletRequest servletRequest) {
         logoutUserUseCase.logout();
         return ResponseEntity.noContent().build();
     }
 
     @Override
-    public ResponseEntity<CurrentUserRest> getCurrentUser(HttpServletRequest servletRequest) {
-        var user = getCurrentUserUseCase.getCurrentUser();
+    public ResponseEntity<CurrentUserRest> getCurrentUser(final HttpServletRequest servletRequest) {
+        final var user = getCurrentUserUseCase.getCurrentUser();
         return ResponseEntity.ok(mapper.toRest(user));
     }
 }
