@@ -1,5 +1,5 @@
 import './Topbar.css'
-import logoImg from '../assets/logo.png'
+import logoImg from '../../assets/logo.png'
 import { Link } from 'react-router-dom'
 
 const Topbar = () => {
