@@ -1,9 +1,9 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import type { CurrentUser } from '../types/auth';
+import type { CurrentUser, LoginInput } from '../types/auth';
 
 interface AuthContextType {
   user: CurrentUser | null;
-  login: () => void;
+  login: (credentials: LoginInput) => void;
   logout: () => void;
 }
 
@@ -13,7 +13,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<CurrentUser | null>(null);
 
   // Na tym etapie: prosta funkcja symulująca zalogowanie użytkownika (Anna Kowalska)
-  const login = () => {
+  const login = (credentials: LoginInput) => {
+    console.log("Dane przekazane przy logowaniu do auth context: ", credentials)
     setUser({
       id: 1,
       email: 'anna.kowalska@example.com',
