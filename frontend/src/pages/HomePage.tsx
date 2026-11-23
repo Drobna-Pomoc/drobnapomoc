@@ -37,7 +37,7 @@ const HomePage = (() => {
                 <div className="hero-right">
                     <img 
                         src={seniorImg}
-                        alt="Uśmiechnięta seniorka trzymająca chuja w dłoni"
+                        alt="Uśmiechnięta seniorka trzymająca telefon w dłoni"
                         className="hero-image"
                     />
                 </div>
