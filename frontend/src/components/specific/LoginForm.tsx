@@ -6,16 +6,27 @@ function LoginForm() {
     const { login } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
 
-    const handleSubmit = (e: FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        login({ email, password});
-        navigate('/dashboard');
+        setError(null);
+        try {
+            await login({ email, password });
+            navigate('/dashboard');
+        } catch (err) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError('Wystąpił nieoczekiwany błąd');
+            }
+        }
     };
 
     return (
         <form onSubmit={handleSubmit}>
+            {error && <p style={{ color: 'red' }}>{error}</p>}
             <div>
                 <label htmlFor='email'>E-mail: </label>
                 <input type='text' name='email' id='email' value={email} onChange={(e) => setEmail(e.target.value)}/>

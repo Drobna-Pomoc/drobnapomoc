@@ -1,9 +1,10 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import type { CurrentUser, LoginInput } from '../types/auth';
+import type { CurrentUser, LoginInput } from '../api/generated/model';
+import { login as apiLogin } from '../api/generated/auth';
 
 interface AuthContextType {
   user: CurrentUser | null;
-  login: (credentials: LoginInput) => void;
+  login: (credentials: LoginInput) => Promise<void>;
   logout: () => void;
 }
 
@@ -12,17 +13,14 @@ interface AuthContextType {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<CurrentUser | null>(null);
 
-  // Na tym etapie: prosta funkcja symulująca zalogowanie użytkownika (Anna Kowalska)
-  const login = (credentials: LoginInput) => {
-    console.log("Dane przekazane przy logowaniu do auth context: ", credentials)
-    setUser({
-      id: 1,
-      email: 'anna.kowalska@example.com',
-      firstName: 'Anna',
-      lastName: 'Kowalska',
-      phone: '+48123456789',
-      roles: ['CLIENT'],
-    });
+  const login = async (credentials: LoginInput) => {
+    const response = await apiLogin(credentials);
+
+    if (response.status === 200) {
+      setUser(response.data);
+    } else {
+      throw new Error(response.data.message || 'Błąd logowania');
+    }
   };
 
   const logout = () => {
@@ -36,7 +34,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Własny hook, aby łatwo pobierać dane w komponentach: const { user, login } = useAuth();
 // eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
