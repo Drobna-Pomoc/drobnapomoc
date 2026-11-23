@@ -1,9 +1,11 @@
 import './Topbar.css'
 import logoImg from '../assets/logo.png'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 const Topbar = () => {
-  const isLoggedIn = false;
+  const { user, logout } = useAuth();
+
   return (
     <div className="topbar">
       <div className="topbar-left">
@@ -20,10 +22,16 @@ const Topbar = () => {
         <span className="topbar-phone-number">📞 22 112 17 17</span>
       </div>
       <div className="topbar-right">
-        {isLoggedIn ? (
-          <Link to="/dashboard" className="topbar-btn topbar-btn-panel">
-            Przejdź do panelu
-          </Link>
+        {user ? (
+          <>
+            {/* <span className="topbar-user-greeting">Witaj, {user.firstName}!</span> */}
+            <Link to="/dashboard" className="topbar-btn topbar-btn-panel">
+              Przejdź do panelu
+            </Link>
+            <button onClick={logout} className="topbar-btn topbar-btn-login">
+              Wyloguj się
+            </button>
+          </>
         ) : (
           <>
             <Link to="/login" className="topbar-btn topbar-btn-login">
@@ -33,7 +41,7 @@ const Topbar = () => {
               Zarejestruj się
             </Link>
           </>
-          )}
+        )}
       </div>
     </div>
   )
