@@ -6,73 +6,148 @@ on:
   pull_request:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  changes:
+  api:
+    name: API
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    permissions:
-      contents: read
-      pull-requests: read
-    outputs:
-      frontend: ${{ steps.filter.outputs.frontend }}
-      backend: ${{ steps.filter.outputs.backend }}
-      api: ${{ steps.filter.outputs.api }}
+    defaults:
+      run:
+        working-directory: api
     steps:
       - uses: actions/checkout@v7
-      - uses: dorny/paths-filter@v4
-        id: filter
-        with:
-          filters: |
-            frontend:
-              - 'frontend/**'
-              - '.github/workflows/ci.yml'
-              - '.github/workflows/frontend-ci.yml'
-            backend:
-              - 'backend/**'
-              # The backend generates code from the specs.
-              - 'api/**'
-              - '.github/workflows/ci.yml'
-              - '.github/workflows/backend-ci.yml'
-            api:
-              - 'api/**'
-              - '.github/workflows/ci.yml'
-              - '.github/workflows/api-ci.yml'
 
-  frontend:
-    needs: changes
-    if: needs.changes.outputs.frontend == 'true'
-    uses: ./.github/workflows/frontend-ci.yml
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+
+      # --ignore-unknown-format: common.yaml has no `openapi` header, the custom rules still check it.
+      - name: Lint OpenAPI specs
+        run: npx --yes @stoplight/spectral-cli@6.17.0 lint '[!.]*.yaml' --fail-severity=warn --ignore-unknown-format
 
   backend:
-    needs: changes
-    if: needs.changes.outputs.backend == 'true'
-    uses: ./.github/workflows/backend-ci.yml
-
-  api:
-    needs: changes
-    if: needs.changes.outputs.api == 'true'
-    uses: ./.github/workflows/api-ci.yml
-
-  ci-ok:
-    needs: [changes, frontend, backend, api]
-    if: always()
+    name: Backend
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 30
     steps:
-      - name: Check results
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      - name: Build
+        working-directory: backend
+        run: ./gradlew build
+
+      - name: Upload test & coverage reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-reports
+          path: |
+            backend/build/reports/tests/
+            backend/build/reports/jacoco/
+          if-no-files-found: ignore
+
+      - name: Upload Sonar inputs
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-sonar
+          path: |
+            backend/build/classes/java/main/
+            backend/build/reports/jacoco/test/jacocoTestReport.xml
+          retention-days: 1
+
+      - name: Upload jar
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-jar
+          path: backend/build/libs/*.jar
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci --ignore-scripts
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test:coverage
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload test & coverage reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-reports
+          path: |
+            frontend/coverage/
+            frontend/test-results/
+          if-no-files-found: ignore
+
+      - name: Upload Sonar inputs
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-sonar
+          path: frontend/coverage/lcov.info
+          retention-days: 1
+
+      - name: Upload dist
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+
+  sonar:
+    name: Sonar
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Download backend Sonar inputs
+        uses: actions/download-artifact@v8
+        with:
+          name: backend-sonar
+          path: backend/build
+
+      - name: Download frontend Sonar inputs
+        uses: actions/download-artifact@v8
+        with:
+          name: frontend-sonar
+          path: frontend/coverage
+
+      - name: SonarQube Cloud scan
+        uses: SonarSource/sonarqube-scan-action@59202af334b4ba7b5db01b701b8e79f8b3bef0f4 # v8.5.0
         env:
-          CHANGES: ${{  needs.changes.result  }}
-          FRONTEND: ${{ needs.frontend.result }}
-          BACKEND: ${{ needs.backend.result }}
-          API: ${{ needs.api.result }}
-        run: |
-          [[ "$CHANGES" == "success" ]]
-          [[ "$FRONTEND" == "success" || "$FRONTEND" == "skipped" ]]
-          [[ "$BACKEND" == "success" || "$BACKEND" == "skipped" ]]
-          [[ "$API" == "success" || "$API" == "skipped" ]]
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
