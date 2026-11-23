@@ -8,7 +8,8 @@
 # Gradle / Java
 .gradle/
 build/
-out/
+/out/
+backend/out/
 !gradle/wrapper/gradle-wrapper.jar
 
 # Node / frontend
