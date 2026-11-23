@@ -1,0 +1,575 @@
+openapi: 3.0.3
+
+info:
+  title: Service requests
+  version: 0.1.0
+  description: |
+    Service requests: submitting them through the web form (with or without an account),
+    the creator's own view, the contractors' view of open requests (without personal data)
+    and the staff view of all requests.
+
+servers:
+  - url: http://localhost:8081/v1
+    description: Local
+
+security:
+  - sessionAuth: []
+
+tags:
+  - name: ServiceRequests
+    description: Submitting service requests and the creator's own requests.
+  - name: ContractorServiceRequests
+    description: Open service requests for contractors, without personal data.
+  - name: AdminServiceRequests
+    description: All service requests, for consultants and admins.
+
+paths:
+  /service-requests:
+    post:
+      tags: [ServiceRequests]
+      operationId: createServiceRequest
+      summary: Submit a service request
+      description: |
+        Creates a service request from the web form. Works with and without a session:
+        with a session the request is attributed to the current account.
+
+        Every call creates a new client record from `client`, also when the user is logged in
+        and submits the request for someone else. The request starts as `NEW`, without
+        a price estimate.
+
+        Without `notifyTarget` notifications go to the client. `CAREGIVER` means the current
+        account and needs a session.
+      security:
+        - {}
+        - sessionAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/CreateServiceRequestRequestBody'
+      responses:
+        '201':
+          $ref: '#/components/responses/ServiceRequestCreatedResponse'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequestError'
+        '403':
+          $ref: 'common.yaml#/components/responses/ForbiddenError'
+        '422':
+          $ref: '#/components/responses/ServiceRequestValidationError'
+        '429':
+          $ref: 'common.yaml#/components/responses/TooManyRequestsError'
+
+    get:
+      tags: [ContractorServiceRequests]
+      operationId: listOpenServiceRequests
+      summary: List open service requests
+      description: |
+        Returns all open service requests (`NEW` and `PRICED`), newest first, without personal
+        data of the client. Only for accounts with the `CONTRACTOR` role.
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceRequestListingListResponse'
+        '401':
+          $ref: 'common.yaml#/components/responses/UnauthorizedError'
+        '403':
+          $ref: 'common.yaml#/components/responses/ForbiddenError'
+
+  /service-requests/mine:
+    get:
+      tags: [ServiceRequests]
+      operationId: listMyServiceRequests
+      summary: List my service requests
+      description: Returns the service requests submitted by the current account, newest first.
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceRequestListResponse'
+        '401':
+          $ref: 'common.yaml#/components/responses/UnauthorizedError'
+
+  /service-requests/mine/{serviceRequestId}:
+    parameters:
+      - $ref: '#/components/parameters/ServiceRequestIdPathParam'
+    get:
+      tags: [ServiceRequests]
+      operationId: getMyServiceRequest
+      summary: Get my service request
+      description: |
+        Returns a service request submitted by the current account. A request submitted
+        by someone else gives `404`.
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceRequestResponse'
+        '401':
+          $ref: 'common.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFoundError'
+
+  /service-requests/{serviceRequestId}:
+    parameters:
+      - $ref: '#/components/parameters/ServiceRequestIdPathParam'
+    get:
+      tags: [ContractorServiceRequests]
+      operationId: getOpenServiceRequest
+      summary: Get an open service request
+      description: |
+        Returns an open service request without personal data of the client. A request that
+        is not open (`NEW` or `PRICED`) gives `404`. Only for accounts with the `CONTRACTOR` role.
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceRequestListingResponse'
+        '401':
+          $ref: 'common.yaml#/components/responses/UnauthorizedError'
+        '403':
+          $ref: 'common.yaml#/components/responses/ForbiddenError'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFoundError'
+
+  /admin/service-requests:
+    get:
+      tags: [AdminServiceRequests]
+      operationId: listAllServiceRequests
+      summary: List all service requests
+      description: |
+        Returns all service requests, newest first. Only for accounts with the `CONSULTANT`
+        or `ADMIN` role.
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceRequestListResponse'
+        '401':
+          $ref: 'common.yaml#/components/responses/UnauthorizedError'
+        '403':
+          $ref: 'common.yaml#/components/responses/ForbiddenError'
+
+  /admin/service-requests/{serviceRequestId}:
+    parameters:
+      - $ref: '#/components/parameters/ServiceRequestIdPathParam'
+    get:
+      tags: [AdminServiceRequests]
+      operationId: getServiceRequest
+      summary: Get a service request
+      description: |
+        Returns any service request. Only for accounts with the `CONSULTANT` or `ADMIN` role.
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceRequestResponse'
+        '401':
+          $ref: 'common.yaml#/components/responses/UnauthorizedError'
+        '403':
+          $ref: 'common.yaml#/components/responses/ForbiddenError'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFoundError'
+
+components:
+  securitySchemes:
+    sessionAuth:
+      $ref: 'common.yaml#/components/securitySchemes/sessionAuth'
+
+  parameters:
+    ServiceRequestIdPathParam:
+      name: serviceRequestId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+        example: 1024
+
+  requestBodies:
+    CreateServiceRequestRequestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateServiceRequestInput'
+
+  responses:
+    ServiceRequestCreatedResponse:
+      description: Service request created.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ServiceRequest'
+
+    ServiceRequestResponse:
+      description: The service request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ServiceRequest'
+
+    ServiceRequestListResponse:
+      description: Service requests, newest first.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ServiceRequest'
+
+    ServiceRequestListingResponse:
+      description: The open service request, without personal data.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ServiceRequestListing'
+
+    ServiceRequestListingListResponse:
+      description: Open service requests without personal data, newest first.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ServiceRequestListing'
+
+    ServiceRequestValidationError:
+      description: |
+        Validation error (`VALIDATION_FAILED`). Besides format errors this covers:
+        `notifyTarget` set to `CAREGIVER` without a session, `preferredTo` before
+        `preferredFrom`, `preferredTo` in the past, an unknown or inactive category and
+        an unknown district.
+
+        `errors[].field` is the path of the field in the body, with nested fields joined
+        by a dot (e.g. `client.districtId`).
+      content:
+        application/json:
+          schema:
+            $ref: 'common.yaml#/components/schemas/ErrorResponse'
+          examples:
+            unknownCategory:
+              value:
+                code: VALIDATION_FAILED
+                message: Dane nie przeszły walidacji.
+                errors:
+                  - field: categoryId
+                    message: Wybrana kategoria nie istnieje lub jest nieaktywna.
+            caregiverWithoutSession:
+              value:
+                code: VALIDATION_FAILED
+                message: Dane nie przeszły walidacji.
+                errors:
+                  - field: notifyTarget
+                    message: Powiadamianie opiekuna wymaga zalogowania.
+            unknownDistrict:
+              value:
+                code: VALIDATION_FAILED
+                message: Dane nie przeszły walidacji.
+                errors:
+                  - field: client.districtId
+                    message: Wybrana dzielnica nie istnieje.
+            invalidTimeWindow:
+              value:
+                code: VALIDATION_FAILED
+                message: Dane nie przeszły walidacji.
+                errors:
+                  - field: preferredTo
+                    message: Koniec terminu nie może być wcześniej niż jego początek.
+
+  schemas:
+    NotifyTarget:
+      type: string
+      description: Who gets notifications about offers and decides on them.
+      enum: [CLIENT, CAREGIVER]
+      example: CLIENT
+
+    RequestChannel:
+      type: string
+      description: How the request was submitted.
+      enum: [WEB_FORM, PHONE]
+      example: WEB_FORM
+
+    ServiceRequestStatus:
+      type: string
+      enum:
+        - NEW
+        - PRICED
+        - ACCEPTED
+        - IN_PROGRESS
+        - WORK_CONFIRMED
+        - COMPLETED
+        - DISPUTED
+        - UNDER_REVIEW
+        - EXPIRED
+        - CANCELLED
+      example: NEW
+
+    CreateServiceRequestInput:
+      type: object
+      required:
+        - client
+        - categoryId
+        - description
+      properties:
+        client:
+          $ref: '#/components/schemas/ServiceRequestClientInput'
+        categoryId:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 3
+        description:
+          type: string
+          minLength: 10
+          maxLength: 2000
+          example: Cieknie kran w kuchni, trzeba wymienić uszczelkę.
+        preferredFrom:
+          type: string
+          format: date-time
+          description: Start of the preferred time window.
+          example: '2026-12-01T09:00:00+01:00'
+        preferredTo:
+          type: string
+          format: date-time
+          description: End of the preferred time window, not before `preferredFrom` and not in the past.
+          example: '2026-12-01T15:00:00+01:00'
+        notifyTarget:
+          $ref: '#/components/schemas/NotifyTarget'
+
+    ServiceRequestClientInput:
+      type: object
+      description: The person the service is for.
+      required:
+        - firstName
+        - lastName
+        - phone
+        - street
+        - houseNumber
+        - postalCode
+        - districtId
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Janina
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: Nowak
+        phone:
+          type: string
+          pattern: '^\+?[0-9]{9,15}$'
+          maxLength: 16
+          example: '+48600123456'
+        street:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: ul. Lipowa
+        houseNumber:
+          type: string
+          minLength: 1
+          maxLength: 20
+          example: 12A
+        apartmentNumber:
+          type: string
+          minLength: 1
+          maxLength: 20
+          example: '5'
+        postalCode:
+          type: string
+          pattern: '^[0-9]{2}-[0-9]{3}$'
+          maxLength: 6
+          example: '20-001'
+        districtId:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 7
+
+    ServiceRequestClient:
+      type: object
+      description: The person the service is for.
+      required:
+        - firstName
+        - lastName
+        - phone
+        - street
+        - houseNumber
+        - postalCode
+        - districtId
+      properties:
+        firstName:
+          type: string
+          maxLength: 100
+          example: Janina
+        lastName:
+          type: string
+          maxLength: 100
+          example: Nowak
+        phone:
+          type: string
+          maxLength: 16
+          example: '+48600123456'
+        street:
+          type: string
+          maxLength: 200
+          example: ul. Lipowa
+        houseNumber:
+          type: string
+          maxLength: 20
+          example: 12A
+        apartmentNumber:
+          type: string
+          maxLength: 20
+          example: '5'
+        postalCode:
+          type: string
+          maxLength: 6
+          example: '20-001'
+        districtId:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 7
+
+    ServiceRequest:
+      type: object
+      description: |
+        Full service request, for its creator and staff. Fields without a value are omitted:
+        the preferred time window, the estimate (until the request is priced), `createdBy`
+        (anonymous request) and `cancelReason`.
+      required:
+        - id
+        - status
+        - channel
+        - categoryId
+        - description
+        - notifyTarget
+        - client
+        - expiresAt
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 1024
+        status:
+          $ref: '#/components/schemas/ServiceRequestStatus'
+        channel:
+          $ref: '#/components/schemas/RequestChannel'
+        categoryId:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 3
+        description:
+          type: string
+          maxLength: 2000
+          example: Cieknie kran w kuchni, trzeba wymienić uszczelkę.
+        preferredFrom:
+          type: string
+          format: date-time
+          example: '2026-12-01T09:00:00+01:00'
+        preferredTo:
+          type: string
+          format: date-time
+          example: '2026-12-01T15:00:00+01:00'
+        notifyTarget:
+          $ref: '#/components/schemas/NotifyTarget'
+        client:
+          $ref: '#/components/schemas/ServiceRequestClient'
+        estimateMinMinor:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Lower bound of the price estimate, in grosze.
+          example: 8000
+        estimateMaxMinor:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Upper bound of the price estimate, in grosze.
+          example: 15000
+        estimatedAt:
+          type: string
+          format: date-time
+          example: '2026-11-23T12:05:00+01:00'
+        expiresAt:
+          type: string
+          format: date-time
+          description: When the request expires if nobody takes it.
+          example: '2026-12-07T12:00:00+01:00'
+        createdBy:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Id of the account that submitted the request.
+          example: 123
+        cancelReason:
+          type: string
+          maxLength: 1000
+          example: Usterkę naprawił sąsiad.
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-11-23T12:00:00+01:00'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-11-23T12:05:00+01:00'
+
+    ServiceRequestListing:
+      type: object
+      description: |
+        Open service request for contractors, without personal data of the client.
+        The preferred time window and the estimate are omitted when they have no value.
+      required:
+        - id
+        - status
+        - categoryId
+        - description
+        - districtId
+        - expiresAt
+        - createdAt
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 1024
+        status:
+          $ref: '#/components/schemas/ServiceRequestStatus'
+        categoryId:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 3
+        description:
+          type: string
+          maxLength: 2000
+          example: Cieknie kran w kuchni, trzeba wymienić uszczelkę.
+        preferredFrom:
+          type: string
+          format: date-time
+          example: '2026-12-01T09:00:00+01:00'
+        preferredTo:
+          type: string
+          format: date-time
+          example: '2026-12-01T15:00:00+01:00'
+        districtId:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 7
+        estimateMinMinor:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Lower bound of the price estimate, in grosze.
+          example: 8000
+        estimateMaxMinor:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Upper bound of the price estimate, in grosze.
+          example: 15000
+        expiresAt:
+          type: string
+          format: date-time
+          example: '2026-12-07T12:00:00+01:00'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-11-23T12:00:00+01:00'

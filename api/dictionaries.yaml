@@ -1,0 +1,115 @@
+openapi: 3.0.3
+
+info:
+  title: Dictionaries
+  version: 0.1.0
+  description: |
+    Read-only dictionaries used by forms: cities with their districts and service categories.
+
+servers:
+  - url: http://localhost:8081/v1
+    description: Local
+
+security: []
+
+tags:
+  - name: Dictionaries
+    description: Cities, districts and service categories.
+
+paths:
+  /cities:
+    get:
+      tags: [Dictionaries]
+      operationId: listCities
+      summary: List cities with districts
+      description: Returns all cities with their districts, both sorted by name.
+      responses:
+        '200':
+          $ref: '#/components/responses/CityListResponse'
+
+  /service-categories:
+    get:
+      tags: [Dictionaries]
+      operationId: listServiceCategories
+      summary: List service categories
+      description: Returns active service categories, sorted by name.
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceCategoryListResponse'
+
+components:
+  responses:
+    CityListResponse:
+      description: Cities with districts.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/City'
+
+    ServiceCategoryListResponse:
+      description: Active service categories.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ServiceCategory'
+
+  schemas:
+    City:
+      type: object
+      required:
+        - id
+        - name
+        - districts
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 1
+        name:
+          type: string
+          maxLength: 100
+          example: Lublin
+        districts:
+          type: array
+          items:
+            $ref: '#/components/schemas/District'
+          example:
+            - id: 7
+              name: Czechów Południowy
+
+    District:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 7
+        name:
+          type: string
+          maxLength: 100
+          example: Czechów Południowy
+
+    ServiceCategory:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 3
+        name:
+          type: string
+          maxLength: 100
+          example: Hydraulika

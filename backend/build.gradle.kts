@@ -2,6 +2,7 @@ import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 plugins {
 	java
+	jacoco
 	id("org.springframework.boot") version "4.1.1"
 	id("io.spring.dependency-management") version "1.1.7"
 	id("org.openapi.generator") version "7.26.0"
@@ -87,4 +88,26 @@ tasks.compileJava {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+}
+
+jacoco {
+	toolVersion = "0.8.16"
+}
+
+tasks.test {
+	finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+	dependsOn(tasks.test)
+	reports {
+		xml.required = true
+		html.required = true
+	}
+	// The *Application class just starts Spring, so leave it out of coverage
+	classDirectories.setFrom(
+		files(classDirectories.files.map {
+			fileTree(it) { exclude("**/*Application.class") }
+		})
+	)
 }

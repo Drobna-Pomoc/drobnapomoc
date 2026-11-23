@@ -8,10 +8,11 @@ components:
         Session cookie, created by `POST /auth/login` and `POST /auth/register` and removed
         by `POST /auth/logout`. The session ends after 30 minutes of inactivity.
 
-        CSRF protection: every `POST`, `PUT`, `PATCH` and `DELETE` request sent with a session
-        must carry the `X-XSRF-TOKEN` header with the value of the `XSRF-TOKEN` cookie.
-        The cookie is set by login and register. A missing or wrong token results in `403`
-        with code `CSRF_INVALID`. Login, register and logout do not require the header.
+        CSRF protection: every `POST`, `PUT`, `PATCH` and `DELETE` request, with or without
+        a session, must carry the `X-XSRF-TOKEN` header with the value of the `XSRF-TOKEN` cookie.
+        The cookie is set on the first API response (e.g. `GET /auth/me`, also when it returns
+        `401`). A missing or wrong token results in `403` with code `CSRF_INVALID`.
+        Login, register and logout do not require the header.
 
   schemas:
     ErrorResponse:
@@ -117,6 +118,17 @@ components:
               value:
                 code: CONFLICT
                 message: Operacja jest niedozwolona w aktualnym stanie zasobu.
+    TooManyRequestsError:
+      description: Too many requests from this client, try again later.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            tooManyRequests:
+              value:
+                code: TOO_MANY_REQUESTS
+                message: Zbyt wiele żądań. Spróbuj ponownie za chwilę.
     UnprocessableEntityError:
       description: Validation error.
       content:
