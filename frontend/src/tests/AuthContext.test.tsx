@@ -18,6 +18,23 @@ describe('AuthContext', () => {
     roles: ['CLIENT'],
   };
 
+  const setupAuth = () => renderHook(() => useAuth(), { wrapper: AuthProvider });
+
+  const performSuccessfulLogin = async (result: ReturnType<typeof setupAuth>['result']) => {
+    vi.mocked(authApi.login).mockResolvedValueOnce({
+      status: 200,
+      data: mockUser,
+      headers: new Headers(),
+    });
+
+    await act(async () => {
+      await result.current.login({
+        email: 'anna.kowalska@example.com',
+        password: 'sekret123',
+      });
+    });
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -29,25 +46,13 @@ describe('AuthContext', () => {
   });
 
   it('provides null user initially', () => {
-    const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider });
+    const { result } = setupAuth();
     expect(result.current.user).toBeNull();
   });
 
   it('successfully logs in a user when API returns 200', async () => {
-    vi.mocked(authApi.login).mockResolvedValueOnce({
-      status: 200,
-      data: mockUser,
-      headers: new Headers(),
-    });
-
-    const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider });
-
-    await act(async () => {
-      await result.current.login({
-        email: 'anna.kowalska@example.com',
-        password: 'sekret123',
-      });
-    });
+    const { result } = setupAuth();
+    await performSuccessfulLogin(result);
 
     expect(result.current.user).toEqual(mockUser);
   });
@@ -62,7 +67,7 @@ describe('AuthContext', () => {
       headers: new Headers(),
     });
 
-    const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider });
+    const { result } = setupAuth();
 
     await expect(
       result.current.login({
@@ -81,7 +86,7 @@ describe('AuthContext', () => {
       headers: new Headers(),
     });
 
-    const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider });
+    const { result } = setupAuth();
 
     await expect(
       result.current.login({
@@ -94,21 +99,8 @@ describe('AuthContext', () => {
   });
 
   it('logs out a user and resets user to null', async () => {
-    vi.mocked(authApi.login).mockResolvedValueOnce({
-      status: 200,
-      data: mockUser,
-      headers: new Headers(),
-    });
-
-    const { result } = renderHook(() => useAuth(), { wrapper: AuthProvider });
-
-    await act(async () => {
-      await result.current.login({
-        email: 'anna.kowalska@example.com',
-        password: 'sekret123',
-      });
-    });
-
+    const { result } = setupAuth();
+    await performSuccessfulLogin(result);
     expect(result.current.user).toEqual(mockUser);
 
     act(() => {
