@@ -5,15 +5,19 @@ import App from './App.tsx'
 
 async function enableMocking() {
   if (import.meta.env.DEV) {
-const { worker } = await import('./mocks/browser')
-return worker.start()
+    const { worker } = await import('./mocks/browser')
+    return worker.start()
   }
 }
 
-enableMocking().then(() => {
-  createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-      <App />
-    </StrictMode>,
-  )
-})
+void enableMocking()
+  .then(() => {
+    createRoot(document.getElementById('root')!).render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    )
+  })
+  .catch((error) => {
+    console.error('Failed to enable mocking:', error)
+  })

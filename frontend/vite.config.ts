@@ -1,18 +1,26 @@
+/// <reference types="vitest/config" />
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
   test: {
-    passWithNoTests: true,
-    reporters: ['default', 'junit'],
-    outputFile: { junit: 'test-results/junit.xml' },
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/tests/setup.ts',
+    css: false,
     coverage: {
       provider: 'v8',
+      reporter: ['text', 'html'],
       include: ['src/**/*.{ts,tsx}'],
-      reporter: ['text', 'html', 'lcov'],
-      reportsDirectory: 'coverage',
+      exclude: [
+        'src/main.tsx',
+        'src/api/generated/**',
+        'src/mocks/**',
+        'src/tests/**',
+        '**/*.d.ts',
+      ],
     },
   },
 })
