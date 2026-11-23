@@ -27,9 +27,13 @@ jobs:
         with:
           node-version: 26
 
+      # --ignore-scripts: don't run the package's lifecycle scripts (Sonar githubactions:S6505).
+      - name: Install Spectral
+        run: npm install --global --ignore-scripts @stoplight/spectral-cli@6.17.0
+
       # --ignore-unknown-format: common.yaml has no `openapi` header, the custom rules still check it.
       - name: Lint OpenAPI specs
-        run: npx --yes @stoplight/spectral-cli@6.17.0 lint '[!.]*.yaml' --fail-severity=warn --ignore-unknown-format
+        run: spectral lint '[!.]*.yaml' --fail-severity=warn --ignore-unknown-format
 
   backend:
     name: Backend
