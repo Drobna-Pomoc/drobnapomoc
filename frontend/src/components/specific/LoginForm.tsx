@@ -11,7 +11,7 @@ function LoginForm() {
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
         login({ email, password});
-        navigate('/');
+        navigate('/dashboard');
     };
 
     return (
