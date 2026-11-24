@@ -58,9 +58,9 @@ class AuthServiceTest {
     @InjectMocks
     private AuthService authService;
 
-    private static Account activeAccount(final Long id) {
+    private static Account activeAccount() {
         return new Account(
-                id,
+                1L,
                 ANNA_EMAIL,
                 ENCODED_HASH,
                 FIRST_NAME,
@@ -73,9 +73,9 @@ class AuthServiceTest {
         );
     }
 
-    private static Account suspendedAccount(final Long id) {
+    private static Account suspendedAccount() {
         return new Account(
-                id,
+                2L,
                 SUSPENDED_EMAIL,
                 ENCODED_HASH,
                 "Jan",
@@ -103,7 +103,7 @@ class AuthServiceTest {
                     " " + LAST_NAME + " ",
                     " " + PHONE + " "
             );
-            final var savedAccount = activeAccount(1L);
+            final var savedAccount = activeAccount();
             final var accountCaptor = ArgumentCaptor.forClass(Account.class);
 
             given(accountRepository.existsByEmail(ANNA_EMAIL)).willReturn(false);
@@ -190,7 +190,7 @@ class AuthServiceTest {
         void shouldLoginSuccessfullyWithValidCredentials() {
             // given
             final var command = new LoginUserCommand("  ANNA.Kowalska@example.com  ", VALID_PHRASE);
-            final var account = activeAccount(1L);
+            final var account = activeAccount();
 
             given(accountRepository.findByEmail(ANNA_EMAIL)).willReturn(Optional.of(account));
             given(passwordEncoder.matches(VALID_PHRASE, ENCODED_HASH)).willReturn(true);
@@ -225,7 +225,7 @@ class AuthServiceTest {
         void shouldThrowInvalidCredentialsExceptionWhenPasswordDoesNotMatch() {
             // given
             final var command = new LoginUserCommand(ANNA_EMAIL, "ZleHaslo");
-            final var account = activeAccount(1L);
+            final var account = activeAccount();
 
             given(accountRepository.findByEmail(ANNA_EMAIL)).willReturn(Optional.of(account));
             given(passwordEncoder.matches("ZleHaslo", ENCODED_HASH)).willReturn(false);
@@ -242,7 +242,7 @@ class AuthServiceTest {
         void shouldThrowAccountSuspendedExceptionWhenAccountIsSuspended() {
             // given
             final var command = new LoginUserCommand(SUSPENDED_EMAIL, VALID_PHRASE);
-            final var account = suspendedAccount(2L);
+            final var account = suspendedAccount();
 
             given(accountRepository.findByEmail(SUSPENDED_EMAIL)).willReturn(Optional.of(account));
             given(passwordEncoder.matches(VALID_PHRASE, ENCODED_HASH)).willReturn(true);
@@ -277,7 +277,7 @@ class AuthServiceTest {
         @DisplayName("Powinno zwrócić dane zalogowanego aktywnego użytkownika")
         void shouldGetCurrentUserSuccessfully() {
             // given
-            final var account = activeAccount(1L);
+            final var account = activeAccount();
             given(sessionManager.getAuthenticatedAccountId()).willReturn(1L);
             given(accountRepository.findById(1L)).willReturn(Optional.of(account));
 
@@ -324,7 +324,7 @@ class AuthServiceTest {
         @DisplayName("Powinno unieważnić sesję i rzucić AccountSuspendedException gdy konto zostało zawieszone")
         void shouldInvalidateSessionAndThrowWhenCurrentAccountIsSuspended() {
             // given
-            final var account = suspendedAccount(2L);
+            final var account = suspendedAccount();
             given(sessionManager.getAuthenticatedAccountId()).willReturn(2L);
             given(accountRepository.findById(2L)).willReturn(Optional.of(account));
 

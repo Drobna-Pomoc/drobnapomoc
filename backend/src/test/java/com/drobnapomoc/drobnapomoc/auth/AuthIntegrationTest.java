@@ -154,7 +154,10 @@ class AuthIntegrationTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(CurrentUserRest.class)
-                .value(user -> assertThat(user.getEmail()).isEqualTo("anna.kowalska@example.com"));
+                .value(user -> {
+                    assertThat(user).isNotNull();
+                    assertThat(user.getEmail()).isEqualTo("anna.kowalska@example.com");
+                });
     }
 
     @Test
