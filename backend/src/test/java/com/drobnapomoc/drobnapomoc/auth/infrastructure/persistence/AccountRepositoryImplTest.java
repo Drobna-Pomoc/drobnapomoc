@@ -44,11 +44,11 @@ class AccountRepositoryImplTest {
         void shouldInsertAndFindById() {
             // given
             final var email = "anna.kowalska@example.com";
-            final var passwordHash = "$2a$10$hash";
+            final var encodedHash = "$2a$10$hash";
             final var account = new Account(
                     null,
                     email,
-                    passwordHash,
+                    encodedHash,
                     ANNA_FIRST_NAME,
                     KOWALSKA_LAST_NAME,
                     PHONE,
@@ -67,7 +67,7 @@ class AccountRepositoryImplTest {
             assertThat(found).hasValueSatisfying(loaded -> {
                 assertThat(loaded.id()).isEqualTo(generatedId);
                 assertThat(loaded.email()).isEqualTo(email);
-                assertThat(loaded.passwordHash()).isEqualTo(passwordHash);
+                assertThat(loaded.passwordHash()).isEqualTo(encodedHash);
                 assertThat(loaded.firstName()).isEqualTo(ANNA_FIRST_NAME);
                 assertThat(loaded.lastName()).isEqualTo(KOWALSKA_LAST_NAME);
                 assertThat(loaded.phone()).isEqualTo(PHONE);

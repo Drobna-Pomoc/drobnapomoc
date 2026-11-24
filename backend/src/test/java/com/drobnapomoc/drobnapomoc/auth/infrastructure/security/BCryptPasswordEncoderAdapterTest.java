@@ -16,7 +16,7 @@ import static org.mockito.BDDMockito.then;
 @DisplayName("BCryptPasswordEncoderAdapter - delegacja do PasswordEncoder")
 class BCryptPasswordEncoderAdapterTest {
 
-    private static final String RAW_PASSWORD = "Haslo123!";
+    private static final String VALID_PHRASE = "Haslo123!";
     private static final String ENCODED_HASH = "$2a$10$encodedHash";
 
     @Mock
@@ -29,42 +29,42 @@ class BCryptPasswordEncoderAdapterTest {
     @DisplayName("Powinno zakodować hasło przez PasswordEncoder")
     void shouldEncodePassword() {
         // given
-        given(passwordEncoder.encode(RAW_PASSWORD)).willReturn(ENCODED_HASH);
+        given(passwordEncoder.encode(VALID_PHRASE)).willReturn(ENCODED_HASH);
 
         // when
-        final var encoded = adapter.encode(RAW_PASSWORD);
+        final var encoded = adapter.encode(VALID_PHRASE);
 
         // then
         assertThat(encoded).isEqualTo(ENCODED_HASH);
-        then(passwordEncoder).should().encode(RAW_PASSWORD);
+        then(passwordEncoder).should().encode(VALID_PHRASE);
     }
 
     @Test
     @DisplayName("Powinno zwrócić true gdy surowe hasło pasuje do hasha")
     void shouldReturnTrueWhenPasswordMatches() {
         // given
-        given(passwordEncoder.matches(RAW_PASSWORD, ENCODED_HASH)).willReturn(true);
+        given(passwordEncoder.matches(VALID_PHRASE, ENCODED_HASH)).willReturn(true);
 
         // when
-        final var matches = adapter.matches(RAW_PASSWORD, ENCODED_HASH);
+        final var matches = adapter.matches(VALID_PHRASE, ENCODED_HASH);
 
         // then
         assertThat(matches).isTrue();
-        then(passwordEncoder).should().matches(RAW_PASSWORD, ENCODED_HASH);
+        then(passwordEncoder).should().matches(VALID_PHRASE, ENCODED_HASH);
     }
 
     @Test
     @DisplayName("Powinno zwrócić false gdy surowe hasło nie pasuje do hasha")
     void shouldReturnFalseWhenPasswordDoesNotMatch() {
         // given
-        final var wrongPassword = "ZleHaslo";
-        given(passwordEncoder.matches(wrongPassword, ENCODED_HASH)).willReturn(false);
+        final var wrongInput = "ZleHaslo";
+        given(passwordEncoder.matches(wrongInput, ENCODED_HASH)).willReturn(false);
 
         // when
-        final var matches = adapter.matches(wrongPassword, ENCODED_HASH);
+        final var matches = adapter.matches(wrongInput, ENCODED_HASH);
 
         // then
         assertThat(matches).isFalse();
-        then(passwordEncoder).should().matches(wrongPassword, ENCODED_HASH);
+        then(passwordEncoder).should().matches(wrongInput, ENCODED_HASH);
     }
 }

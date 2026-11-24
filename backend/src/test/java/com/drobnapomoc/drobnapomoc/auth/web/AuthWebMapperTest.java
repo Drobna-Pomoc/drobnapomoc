@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AuthWebMapperTest {
 
     private static final String EMAIL = "anna@example.com";
-    private static final String PASSWORD = "Haslo123!";
+    private static final String VALID_PHRASE = "Haslo123!";
     private static final String FIRST_NAME = "Anna";
     private static final String LAST_NAME = "Kowalska";
     private static final String PHONE = "+48123456789";
@@ -30,14 +30,14 @@ class AuthWebMapperTest {
     @DisplayName("Powinno zmapować RegisterInputRest na RegisterUserCommand")
     void shouldMapRegisterInputToCommand() {
         // given
-        final var input = new RegisterInputRest(EMAIL, PASSWORD, FIRST_NAME, LAST_NAME, PHONE);
+        final var input = new RegisterInputRest(EMAIL, VALID_PHRASE, FIRST_NAME, LAST_NAME, PHONE);
 
         // when
         final var command = mapper.toCommand(input);
 
         // then
         assertThat(command.email()).isEqualTo(EMAIL);
-        assertThat(command.password()).isEqualTo(PASSWORD);
+        assertThat(command.password()).isEqualTo(VALID_PHRASE);
         assertThat(command.firstName()).isEqualTo(FIRST_NAME);
         assertThat(command.lastName()).isEqualTo(LAST_NAME);
         assertThat(command.phone()).isEqualTo(PHONE);
@@ -47,14 +47,14 @@ class AuthWebMapperTest {
     @DisplayName("Powinno zmapować LoginInputRest na LoginUserCommand")
     void shouldMapLoginInputToCommand() {
         // given
-        final var input = new LoginInputRest(EMAIL, PASSWORD);
+        final var input = new LoginInputRest(EMAIL, VALID_PHRASE);
 
         // when
         final var command = mapper.toCommand(input);
 
         // then
         assertThat(command.email()).isEqualTo(EMAIL);
-        assertThat(command.password()).isEqualTo(PASSWORD);
+        assertThat(command.password()).isEqualTo(VALID_PHRASE);
     }
 
     @Test

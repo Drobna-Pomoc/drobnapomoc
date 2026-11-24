@@ -37,7 +37,7 @@ class AuthIntegrationTest {
     private static final String LOGIN_PATH = "/v1/auth/login";
     private static final String LOGOUT_PATH = "/v1/auth/logout";
     private static final String ME_PATH = "/v1/auth/me";
-    private static final String PASSWORD = "Zielony-Rower-42";
+    private static final String VALID_PHRASE = "Zielony-Rower-42";
     private static final String LAST_NAME = "Kowalska";
     private static final String PHONE = "+48123456789";
     private static final String ANNA_EMAIL = "anna@example.com";
@@ -73,7 +73,7 @@ class AuthIntegrationTest {
         // given
         final var registerInput = new RegisterInputRest(
                 "Anna.Kowalska@Example.COM",
-                PASSWORD,
+                VALID_PHRASE,
                 " Anna ",
                 " " + LAST_NAME + " ",
                 PHONE
@@ -138,7 +138,7 @@ class AuthIntegrationTest {
         final var loginResult = restTestClient.post()
                 .uri(LOGIN_PATH)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(new LoginInputRest("ANNA.KOWALSKA@example.com", PASSWORD))
+                .body(new LoginInputRest("ANNA.KOWALSKA@example.com", VALID_PHRASE))
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(CurrentUserRest.class)
@@ -163,7 +163,7 @@ class AuthIntegrationTest {
         // given
         final var first = new RegisterInputRest(
                 "jan.nowak@example.com",
-                PASSWORD,
+                VALID_PHRASE,
                 "Jan",
                 "Nowak",
                 PHONE
@@ -207,7 +207,7 @@ class AuthIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(new RegisterInputRest(
                         ANNA_EMAIL,
-                        PASSWORD,
+                        VALID_PHRASE,
                         "Anna",
                         LAST_NAME,
                         PHONE
@@ -264,7 +264,7 @@ class AuthIntegrationTest {
         final var loginError = Objects.requireNonNull(restTestClient.post()
                 .uri(LOGIN_PATH)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(new LoginInputRest(ANNA_EMAIL, PASSWORD))
+                .body(new LoginInputRest(ANNA_EMAIL, VALID_PHRASE))
                 .exchange()
                 .expectStatus().isForbidden()
                 .expectBody(ErrorResponseRest.class)
@@ -283,7 +283,7 @@ class AuthIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(new RegisterInputRest(
                         "csrf@example.com",
-                        PASSWORD,
+                        VALID_PHRASE,
                         "Anna",
                         LAST_NAME,
                         PHONE

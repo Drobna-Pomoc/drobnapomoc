@@ -40,8 +40,8 @@ class AuthServiceTest {
     private static final Instant CREATED_AT = Instant.parse("2026-10-20T12:00:00Z");
     private static final String ANNA_EMAIL = "anna.kowalska@example.com";
     private static final String SUSPENDED_EMAIL = "zawieszony@example.com";
-    private static final String RAW_PASSWORD = "Haslo123!";
-    private static final String HASHED_PASSWORD = "hashed-password-123";
+    private static final String VALID_PHRASE = "Haslo123!";
+    private static final String ENCODED_HASH = "hashed-value-123";
     private static final String FIRST_NAME = "Anna";
     private static final String LAST_NAME = "Kowalska";
     private static final String PHONE = "+48123456789";
@@ -62,7 +62,7 @@ class AuthServiceTest {
         return new Account(
                 id,
                 ANNA_EMAIL,
-                HASHED_PASSWORD,
+                ENCODED_HASH,
                 FIRST_NAME,
                 LAST_NAME,
                 PHONE,
@@ -77,7 +77,7 @@ class AuthServiceTest {
         return new Account(
                 id,
                 SUSPENDED_EMAIL,
-                HASHED_PASSWORD,
+                ENCODED_HASH,
                 "Jan",
                 "Zawieszony",
                 PHONE,
@@ -98,7 +98,7 @@ class AuthServiceTest {
             // given
             final var command = new RegisterUserCommand(
                     "  Anna.Kowalska@EXAMPLE.com  ",
-                    RAW_PASSWORD,
+                    VALID_PHRASE,
                     "  " + FIRST_NAME + " ",
                     " " + LAST_NAME + " ",
                     " " + PHONE + " "
@@ -107,7 +107,7 @@ class AuthServiceTest {
             final var accountCaptor = ArgumentCaptor.forClass(Account.class);
 
             given(accountRepository.existsByEmail(ANNA_EMAIL)).willReturn(false);
-            given(passwordEncoder.encode(RAW_PASSWORD)).willReturn(HASHED_PASSWORD);
+            given(passwordEncoder.encode(VALID_PHRASE)).willReturn(ENCODED_HASH);
             given(accountRepository.insert(accountCaptor.capture())).willReturn(1L);
             given(accountRepository.findById(1L)).willReturn(Optional.of(savedAccount));
 
@@ -118,7 +118,7 @@ class AuthServiceTest {
             final var inserted = accountCaptor.getValue();
             assertThat(inserted.id()).isNull();
             assertThat(inserted.email()).isEqualTo(ANNA_EMAIL);
-            assertThat(inserted.passwordHash()).isEqualTo(HASHED_PASSWORD);
+            assertThat(inserted.passwordHash()).isEqualTo(ENCODED_HASH);
             assertThat(inserted.firstName()).isEqualTo(FIRST_NAME);
             assertThat(inserted.lastName()).isEqualTo(LAST_NAME);
             assertThat(inserted.phone()).isEqualTo(PHONE);
@@ -140,7 +140,7 @@ class AuthServiceTest {
             // given
             final var command = new RegisterUserCommand(
                     "  ANNA.Kowalska@example.com ",
-                    RAW_PASSWORD,
+                    VALID_PHRASE,
                     FIRST_NAME,
                     LAST_NAME,
                     PHONE
@@ -162,13 +162,13 @@ class AuthServiceTest {
             // given
             final var command = new RegisterUserCommand(
                     ANNA_EMAIL,
-                    RAW_PASSWORD,
+                    VALID_PHRASE,
                     FIRST_NAME,
                     LAST_NAME,
                     PHONE
             );
             given(accountRepository.existsByEmail(ANNA_EMAIL)).willReturn(false);
-            given(passwordEncoder.encode(RAW_PASSWORD)).willReturn(HASHED_PASSWORD);
+            given(passwordEncoder.encode(VALID_PHRASE)).willReturn(ENCODED_HASH);
             given(accountRepository.insert(any(Account.class))).willReturn(99L);
             given(accountRepository.findById(99L)).willReturn(Optional.empty());
 
@@ -189,11 +189,11 @@ class AuthServiceTest {
         @DisplayName("Powinno znormalizować email, zweryfikować hasło i utworzyć sesję")
         void shouldLoginSuccessfullyWithValidCredentials() {
             // given
-            final var command = new LoginUserCommand("  ANNA.Kowalska@example.com  ", RAW_PASSWORD);
+            final var command = new LoginUserCommand("  ANNA.Kowalska@example.com  ", VALID_PHRASE);
             final var account = activeAccount(1L);
 
             given(accountRepository.findByEmail(ANNA_EMAIL)).willReturn(Optional.of(account));
-            given(passwordEncoder.matches(RAW_PASSWORD, HASHED_PASSWORD)).willReturn(true);
+            given(passwordEncoder.matches(VALID_PHRASE, ENCODED_HASH)).willReturn(true);
 
             // when
             final var result = authService.login(command);
@@ -209,7 +209,7 @@ class AuthServiceTest {
         @DisplayName("Powinno rzucić InvalidCredentialsException gdy konto nie istnieje")
         void shouldThrowInvalidCredentialsExceptionWhenAccountDoesNotExist() {
             // given
-            final var command = new LoginUserCommand("nieistnieje@example.com", RAW_PASSWORD);
+            final var command = new LoginUserCommand("nieistnieje@example.com", VALID_PHRASE);
             given(accountRepository.findByEmail("nieistnieje@example.com")).willReturn(Optional.empty());
 
             // when & then
@@ -228,7 +228,7 @@ class AuthServiceTest {
             final var account = activeAccount(1L);
 
             given(accountRepository.findByEmail(ANNA_EMAIL)).willReturn(Optional.of(account));
-            given(passwordEncoder.matches("ZleHaslo", HASHED_PASSWORD)).willReturn(false);
+            given(passwordEncoder.matches("ZleHaslo", ENCODED_HASH)).willReturn(false);
 
             // when & then
             assertThatThrownBy(() -> authService.login(command))
@@ -241,11 +241,11 @@ class AuthServiceTest {
         @DisplayName("Powinno rzucić AccountSuspendedException gdy konto jest zawieszone")
         void shouldThrowAccountSuspendedExceptionWhenAccountIsSuspended() {
             // given
-            final var command = new LoginUserCommand(SUSPENDED_EMAIL, RAW_PASSWORD);
+            final var command = new LoginUserCommand(SUSPENDED_EMAIL, VALID_PHRASE);
             final var account = suspendedAccount(2L);
 
             given(accountRepository.findByEmail(SUSPENDED_EMAIL)).willReturn(Optional.of(account));
-            given(passwordEncoder.matches(RAW_PASSWORD, HASHED_PASSWORD)).willReturn(true);
+            given(passwordEncoder.matches(VALID_PHRASE, ENCODED_HASH)).willReturn(true);
 
             // when & then
             assertThatThrownBy(() -> authService.login(command))

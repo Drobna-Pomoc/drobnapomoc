@@ -61,7 +61,7 @@ class AuthenticationControllerTest {
     private static final String LOGOUT_PATH = "/v1/auth/logout";
     private static final String ME_PATH = "/v1/auth/me";
     private static final String EMAIL = "anna.kowalska@example.com";
-    private static final String PASSWORD = "Zielony-Rower-42";
+    private static final String VALID_PHRASE = "Zielony-Rower-42";
     private static final String FIRST_NAME = "Anna";
     private static final String LAST_NAME = "Kowalska";
     private static final String PHONE = "+48123456789";
@@ -116,7 +116,7 @@ class AuthenticationControllerTest {
         @DisplayName("Powinno zwrócić 201 Created i dane zarejestrowanego użytkownika")
         void shouldRegisterAndReturnCreated() {
             // given
-            final var input = new RegisterInputRest(EMAIL, PASSWORD, FIRST_NAME, LAST_NAME, PHONE);
+            final var input = new RegisterInputRest(EMAIL, VALID_PHRASE, FIRST_NAME, LAST_NAME, PHONE);
             given(registerUserUseCase.register(any(RegisterUserCommand.class))).willReturn(sampleUser());
 
             // when
@@ -140,7 +140,7 @@ class AuthenticationControllerTest {
                     });
 
             then(registerUserUseCase).should().register(
-                    new RegisterUserCommand(EMAIL, PASSWORD, FIRST_NAME, LAST_NAME, PHONE)
+                    new RegisterUserCommand(EMAIL, VALID_PHRASE, FIRST_NAME, LAST_NAME, PHONE)
             );
         }
 
@@ -148,7 +148,7 @@ class AuthenticationControllerTest {
         @DisplayName("Powinno zwrócić 409 Conflict gdy email jest już zajęty")
         void shouldReturnConflictWhenEmailTaken() {
             // given
-            final var input = new RegisterInputRest(EMAIL, PASSWORD, FIRST_NAME, LAST_NAME, PHONE);
+            final var input = new RegisterInputRest(EMAIL, VALID_PHRASE, FIRST_NAME, LAST_NAME, PHONE);
             given(registerUserUseCase.register(any(RegisterUserCommand.class)))
                     .willThrow(new EmailAlreadyTakenException(EMAIL));
 
@@ -229,7 +229,7 @@ class AuthenticationControllerTest {
         @DisplayName("Powinno zwrócić 200 OK i dane zalogowanego użytkownika")
         void shouldLoginAndReturnCurrentUser() {
             // given
-            final var input = new LoginInputRest(EMAIL, PASSWORD);
+            final var input = new LoginInputRest(EMAIL, VALID_PHRASE);
             given(loginUserUseCase.login(any(LoginUserCommand.class))).willReturn(sampleUser());
 
             // when
@@ -249,7 +249,7 @@ class AuthenticationControllerTest {
                         assertThat(json).extractingPath(JSON_ROLES_FIRST_PATH).isEqualTo(ROLE_CLIENT_VALUE);
                     });
 
-            then(loginUserUseCase).should().login(new LoginUserCommand(EMAIL, PASSWORD));
+            then(loginUserUseCase).should().login(new LoginUserCommand(EMAIL, VALID_PHRASE));
         }
 
         @Test
@@ -281,7 +281,7 @@ class AuthenticationControllerTest {
         @DisplayName("Powinno zwrócić 403 Forbidden gdy konto jest zawieszone")
         void shouldReturnForbiddenWhenAccountSuspended() {
             // given
-            final var input = new LoginInputRest("zawieszony@example.com", PASSWORD);
+            final var input = new LoginInputRest("zawieszony@example.com", VALID_PHRASE);
             given(loginUserUseCase.login(any(LoginUserCommand.class)))
                     .willThrow(new AccountSuspendedException());
 

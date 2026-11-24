@@ -19,7 +19,7 @@ class AccountTest {
 
     private static final Instant NOW = Instant.parse("2026-10-20T12:00:00Z");
     private static final String EMAIL = "anna@example.com";
-    private static final String PASSWORD_HASH = "hashed";
+    private static final String ENCODED_HASH = "hashed-value";
     private static final String FIRST_NAME = "Anna";
     private static final String LAST_NAME = "Kowalska";
     private static final String PHONE = "+48123456789";
@@ -33,15 +33,15 @@ class AccountTest {
         void shouldCreateClientCorrectly() {
             // given
             final var email = "anna.kowalska@example.com";
-            final var passwordHash = "hashedPass";
+            final var encodedHash = "hashedValue";
 
             // when
-            final var account = Account.createClient(email, passwordHash, FIRST_NAME, LAST_NAME, PHONE);
+            final var account = Account.createClient(email, encodedHash, FIRST_NAME, LAST_NAME, PHONE);
 
             // then
             assertThat(account.id()).isNull();
             assertThat(account.email()).isEqualTo(email);
-            assertThat(account.passwordHash()).isEqualTo(passwordHash);
+            assertThat(account.passwordHash()).isEqualTo(encodedHash);
             assertThat(account.firstName()).isEqualTo(FIRST_NAME);
             assertThat(account.lastName()).isEqualTo(LAST_NAME);
             assertThat(account.phone()).isEqualTo(PHONE);
@@ -62,7 +62,7 @@ class AccountTest {
             final var account = new Account(
                     1L,
                     EMAIL,
-                    PASSWORD_HASH,
+                    ENCODED_HASH,
                     FIRST_NAME,
                     LAST_NAME,
                     PHONE,
@@ -97,7 +97,7 @@ class AccountTest {
             assertThatThrownBy(() -> new Account(
                     1L,
                     blankEmail,
-                    PASSWORD_HASH,
+                    ENCODED_HASH,
                     FIRST_NAME,
                     LAST_NAME,
                     PHONE,
@@ -122,7 +122,7 @@ class AccountTest {
             assertThatThrownBy(() -> new Account(
                     1L,
                     EMAIL,
-                    PASSWORD_HASH,
+                    ENCODED_HASH,
                     blankFirstName,
                     LAST_NAME,
                     PHONE,
@@ -147,7 +147,7 @@ class AccountTest {
             assertThatThrownBy(() -> new Account(
                     1L,
                     EMAIL,
-                    PASSWORD_HASH,
+                    ENCODED_HASH,
                     FIRST_NAME,
                     blankLastName,
                     PHONE,
@@ -172,7 +172,7 @@ class AccountTest {
             assertThatThrownBy(() -> new Account(
                     1L,
                     EMAIL,
-                    PASSWORD_HASH,
+                    ENCODED_HASH,
                     FIRST_NAME,
                     LAST_NAME,
                     blankPhone,
@@ -193,7 +193,7 @@ class AccountTest {
             final var roles = Set.of(AccountRole.CLIENT);
 
             // when & then
-            assertThatThrownBy(() -> new Account(1L, null, PASSWORD_HASH, FIRST_NAME, LAST_NAME, PHONE, AccountStatus.ACTIVE, roles, NOW, null))
+            assertThatThrownBy(() -> new Account(1L, null, ENCODED_HASH, FIRST_NAME, LAST_NAME, PHONE, AccountStatus.ACTIVE, roles, NOW, null))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessage("Email cannot be null");
 
@@ -201,23 +201,23 @@ class AccountTest {
                     .isInstanceOf(NullPointerException.class)
                     .hasMessage("PasswordHash cannot be null");
 
-            assertThatThrownBy(() -> new Account(1L, EMAIL, PASSWORD_HASH, null, LAST_NAME, PHONE, AccountStatus.ACTIVE, roles, NOW, null))
+            assertThatThrownBy(() -> new Account(1L, EMAIL, ENCODED_HASH, null, LAST_NAME, PHONE, AccountStatus.ACTIVE, roles, NOW, null))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessage("FirstName cannot be null");
 
-            assertThatThrownBy(() -> new Account(1L, EMAIL, PASSWORD_HASH, FIRST_NAME, null, PHONE, AccountStatus.ACTIVE, roles, NOW, null))
+            assertThatThrownBy(() -> new Account(1L, EMAIL, ENCODED_HASH, FIRST_NAME, null, PHONE, AccountStatus.ACTIVE, roles, NOW, null))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessage("LastName cannot be null");
 
-            assertThatThrownBy(() -> new Account(1L, EMAIL, PASSWORD_HASH, FIRST_NAME, LAST_NAME, null, AccountStatus.ACTIVE, roles, NOW, null))
+            assertThatThrownBy(() -> new Account(1L, EMAIL, ENCODED_HASH, FIRST_NAME, LAST_NAME, null, AccountStatus.ACTIVE, roles, NOW, null))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessage("Phone cannot be null");
 
-            assertThatThrownBy(() -> new Account(1L, EMAIL, PASSWORD_HASH, FIRST_NAME, LAST_NAME, PHONE, null, roles, NOW, null))
+            assertThatThrownBy(() -> new Account(1L, EMAIL, ENCODED_HASH, FIRST_NAME, LAST_NAME, PHONE, null, roles, NOW, null))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessage("Status cannot be null");
 
-            assertThatThrownBy(() -> new Account(1L, EMAIL, PASSWORD_HASH, FIRST_NAME, LAST_NAME, PHONE, AccountStatus.ACTIVE, null, NOW, null))
+            assertThatThrownBy(() -> new Account(1L, EMAIL, ENCODED_HASH, FIRST_NAME, LAST_NAME, PHONE, AccountStatus.ACTIVE, null, NOW, null))
                     .isInstanceOf(NullPointerException.class)
                     .hasMessage("Roles cannot be null");
         }
@@ -231,11 +231,11 @@ class AccountTest {
         @DisplayName("Powinno poprawnie rozpoznawać status ACTIVE i SUSPENDED")
         void shouldCheckAccountStatus() {
             // given
-            final var activeAccount = Account.createClient(EMAIL, PASSWORD_HASH, FIRST_NAME, LAST_NAME, PHONE);
+            final var activeAccount = Account.createClient(EMAIL, ENCODED_HASH, FIRST_NAME, LAST_NAME, PHONE);
             final var suspendedAccount = new Account(
                     2L,
                     "suspended@example.com",
-                    PASSWORD_HASH,
+                    ENCODED_HASH,
                     "Jan",
                     "Nowak",
                     "+48987654321",
@@ -259,7 +259,7 @@ class AccountTest {
             final var account = new Account(
                     1L,
                     EMAIL,
-                    PASSWORD_HASH,
+                    ENCODED_HASH,
                     FIRST_NAME,
                     LAST_NAME,
                     PHONE,
@@ -280,7 +280,7 @@ class AccountTest {
         @DisplayName("Powinno rzucić NullPointerException gdy przekazana rola do hasRole jest null")
         void shouldRejectNullRoleInHasRole() {
             // given
-            final var account = Account.createClient(EMAIL, PASSWORD_HASH, FIRST_NAME, LAST_NAME, PHONE);
+            final var account = Account.createClient(EMAIL, ENCODED_HASH, FIRST_NAME, LAST_NAME, PHONE);
 
             // when & then
             assertThatThrownBy(() -> account.hasRole(null))
