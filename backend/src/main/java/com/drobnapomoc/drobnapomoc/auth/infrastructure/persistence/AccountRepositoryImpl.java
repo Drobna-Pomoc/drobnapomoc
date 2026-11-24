@@ -6,12 +6,14 @@ import com.drobnapomoc.drobnapomoc.auth.domain.AccountRole;
 import com.drobnapomoc.drobnapomoc.auth.domain.AccountStatus;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -22,11 +24,16 @@ import java.util.stream.Collectors;
 @NullMarked
 public class AccountRepositoryImpl implements AccountRepository {
 
-    private static final String BASE_SELECT = """
-            SELECT id, email, password_hash, first_name, last_name, phone,
-                   status, created_at, anonymized_at
-            FROM account
-            """;
+    private static final String PARAM_ID = "id";
+    private static final String PARAM_ACCOUNT_ID = "accountId";
+    private static final String PARAM_EMAIL = "email";
+    private static final String PARAM_PASSWORD_HASH = "passwordHash";
+    private static final String PARAM_FIRST_NAME = "firstName";
+    private static final String PARAM_LAST_NAME = "lastName";
+    private static final String PARAM_PHONE = "phone";
+    private static final String PARAM_STATUS = "status";
+    private static final String PARAM_ANONYMIZED_AT = "anonymizedAt";
+    private static final String PARAM_ROLE = "role";
 
     private final JdbcClient jdbcClient;
 
@@ -38,25 +45,20 @@ public class AccountRepositoryImpl implements AccountRepository {
             String lastName,
             String phone,
             AccountStatus status,
-            Instant createdAt,
-            Instant anonymizedAt
+            @Nullable Instant createdAt,
+            @Nullable Instant anonymizedAt
     ) {}
 
     @Override
     public Optional<Account> findById(final long id) {
-        final var accountData = jdbcClient.sql(BASE_SELECT + " WHERE id = :id")
-                .param("id", id)
-                .query((rs, rowNum) -> new AccountRow(
-                        rs.getLong("id"),
-                        rs.getString("email"),
-                        rs.getString("password_hash"),
-                        rs.getString("first_name"),
-                        rs.getString("last_name"),
-                        rs.getString("phone"),
-                        AccountStatus.valueOf(rs.getString("status")),
-                        rs.getTimestamp("created_at") != null ? rs.getTimestamp("created_at").toInstant() : null,
-                        rs.getTimestamp("anonymized_at") != null ? rs.getTimestamp("anonymized_at").toInstant() : null
-                ))
+        final var accountData = jdbcClient.sql("""
+                        SELECT id, email, password_hash, first_name, last_name, phone,
+                               status, created_at, anonymized_at
+                        FROM account
+                        WHERE id = :id
+                        """)
+                .param(PARAM_ID, id)
+                .query((rs, _) -> mapRow(rs))
                 .optional();
 
         return accountData.map(this::mapToAccount);
@@ -64,19 +66,14 @@ public class AccountRepositoryImpl implements AccountRepository {
 
     @Override
     public Optional<Account> findByEmail(final String email) {
-        final var accountData = jdbcClient.sql(BASE_SELECT + " WHERE lower(email) = lower(:email)")
-                .param("email", email.trim())
-                .query((rs, rowNum) -> new AccountRow(
-                        rs.getLong("id"),
-                        rs.getString("email"),
-                        rs.getString("password_hash"),
-                        rs.getString("first_name"),
-                        rs.getString("last_name"),
-                        rs.getString("phone"),
-                        AccountStatus.valueOf(rs.getString("status")),
-                        rs.getTimestamp("created_at") != null ? rs.getTimestamp("created_at").toInstant() : null,
-                        rs.getTimestamp("anonymized_at") != null ? rs.getTimestamp("anonymized_at").toInstant() : null
-                ))
+        final var accountData = jdbcClient.sql("""
+                        SELECT id, email, password_hash, first_name, last_name, phone,
+                               status, created_at, anonymized_at
+                        FROM account
+                        WHERE lower(email) = lower(:email)
+                        """)
+                .param(PARAM_EMAIL, email.trim())
+                .query((rs, _) -> mapRow(rs))
                 .optional();
 
         return accountData.map(this::mapToAccount);
@@ -85,11 +82,11 @@ public class AccountRepositoryImpl implements AccountRepository {
     @Override
     public boolean existsByEmail(final String email) {
         final var count = jdbcClient.sql("SELECT COUNT(*) FROM account WHERE lower(email) = lower(:email)")
-                .param("email", email.trim())
+                .param(PARAM_EMAIL, email.trim())
                 .query(Long.class)
                 .single();
 
-        return count != null && count > 0;
+        return count > 0;
     }
 
     @Override
@@ -101,32 +98,23 @@ public class AccountRepositoryImpl implements AccountRepository {
                     email, password_hash, first_name, last_name, phone, status
                 )
                 VALUES (
-                    :email, :passwordHash, :firstName, :lastName, :phone, :status::account_status
+                    :email, :passwordHash, :firstName, :lastName, :phone, CAST(:status AS account_status)
                 )
                 RETURNING id
                 """;
 
         final var id = jdbcClient.sql(sql)
-                .param("email", account.email())
-                .param("passwordHash", account.passwordHash())
-                .param("firstName", account.firstName())
-                .param("lastName", account.lastName())
-                .param("phone", account.phone())
-                .param("status", account.status().name())
+                .param(PARAM_EMAIL, account.email())
+                .param(PARAM_PASSWORD_HASH, account.passwordHash())
+                .param(PARAM_FIRST_NAME, account.firstName())
+                .param(PARAM_LAST_NAME, account.lastName())
+                .param(PARAM_PHONE, account.phone())
+                .param(PARAM_STATUS, account.status().name())
                 .query(Long.class)
                 .single();
 
         Objects.requireNonNull(id, "Generated id cannot be null");
-
-        for (final var role : account.roles()) {
-            jdbcClient.sql("""
-                    INSERT INTO account_role (account_id, role)
-                    VALUES (:accountId, :role::account_role_type)
-                    """)
-                    .param("accountId", id)
-                    .param("role", role.name())
-                    .update();
-        }
+        insertRoles(id, account.roles());
 
         return id;
     }
@@ -142,37 +130,67 @@ public class AccountRepositoryImpl implements AccountRepository {
                     first_name = :firstName,
                     last_name = :lastName,
                     phone = :phone,
-                    status = :status::account_status,
+                    status = CAST(:status AS account_status),
                     anonymized_at = :anonymizedAt
                 WHERE id = :id
                 """;
 
         final var updated = jdbcClient.sql(sql)
-                .param("id", account.id())
-                .param("email", account.email())
-                .param("passwordHash", account.passwordHash())
-                .param("firstName", account.firstName())
-                .param("lastName", account.lastName())
-                .param("phone", account.phone())
-                .param("status", account.status().name())
-                .param("anonymizedAt", account.anonymizedAt() != null ? Timestamp.from(account.anonymizedAt()) : null)
+                .param(PARAM_ID, account.id())
+                .param(PARAM_EMAIL, account.email())
+                .param(PARAM_PASSWORD_HASH, account.passwordHash())
+                .param(PARAM_FIRST_NAME, account.firstName())
+                .param(PARAM_LAST_NAME, account.lastName())
+                .param(PARAM_PHONE, account.phone())
+                .param(PARAM_STATUS, account.status().name())
+                .param(PARAM_ANONYMIZED_AT, toTimestampOrNull(account.anonymizedAt()))
                 .update();
 
-        jdbcClient.sql("DELETE FROM account_role WHERE account_id = :accountId")
-                .param("accountId", account.id())
-                .update();
-
-        for (final var role : account.roles()) {
-            jdbcClient.sql("""
-                    INSERT INTO account_role (account_id, role)
-                    VALUES (:accountId, :role::account_role_type)
-                    """)
-                    .param("accountId", account.id())
-                    .param("role", role.name())
-                    .update();
+        if (updated == 0) {
+            return false;
         }
 
-        return updated > 0;
+        jdbcClient.sql("DELETE FROM account_role WHERE account_id = :accountId")
+                .param(PARAM_ACCOUNT_ID, account.id())
+                .update();
+
+        insertRoles(account.id(), account.roles());
+
+        return true;
+    }
+
+    private void insertRoles(final long accountId, final Set<AccountRole> roles) {
+        for (final var role : roles) {
+            jdbcClient.sql("""
+                    INSERT INTO account_role (account_id, role)
+                    VALUES (:accountId, CAST(:role AS account_role_type))
+                    """)
+                    .param(PARAM_ACCOUNT_ID, accountId)
+                    .param(PARAM_ROLE, role.name())
+                    .update();
+        }
+    }
+
+    private AccountRow mapRow(final ResultSet rs) throws SQLException {
+        return new AccountRow(
+                rs.getLong(PARAM_ID),
+                rs.getString(PARAM_EMAIL),
+                rs.getString("password_hash"),
+                rs.getString("first_name"),
+                rs.getString("last_name"),
+                rs.getString(PARAM_PHONE),
+                AccountStatus.valueOf(rs.getString(PARAM_STATUS)),
+                toInstantOrNull(rs.getTimestamp("created_at")),
+                toInstantOrNull(rs.getTimestamp("anonymized_at"))
+        );
+    }
+
+    private static @Nullable Instant toInstantOrNull(@Nullable final Timestamp timestamp) {
+        return timestamp != null ? timestamp.toInstant() : null;
+    }
+
+    private static @Nullable Timestamp toTimestampOrNull(@Nullable final Instant instant) {
+        return instant != null ? Timestamp.from(instant) : null;
     }
 
     private Account mapToAccount(final AccountRow row) {
@@ -194,7 +212,7 @@ public class AccountRepositoryImpl implements AccountRepository {
 
     private Set<AccountRole> findRolesByAccountId(final long accountId) {
         final var roleStrings = jdbcClient.sql("SELECT role FROM account_role WHERE account_id = :accountId")
-                .param("accountId", accountId)
+                .param(PARAM_ACCOUNT_ID, accountId)
                 .query(String.class)
                 .list();
 

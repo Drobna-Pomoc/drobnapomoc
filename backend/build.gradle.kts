@@ -40,6 +40,8 @@ dependencies {
 	runtimeOnly("org.postgresql:postgresql")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+	testImplementation("org.springframework.boot:spring-boot-starter-jdbc-test")
+	testImplementation("org.springframework.boot:spring-boot-starter-security-test")
 	testImplementation("org.springframework.boot:spring-boot-testcontainers")
 	testImplementation("org.testcontainers:testcontainers-junit-jupiter")
 	testImplementation("org.testcontainers:testcontainers-postgresql")
@@ -105,16 +107,48 @@ tasks.test {
 	finalizedBy(tasks.jacocoTestReport)
 }
 
+val jacocoExcludes = listOf(
+	"**/com/drobnapomoc/drobnapomoc/api/**",
+	"**/*Application*"
+)
+
 tasks.jacocoTestReport {
 	dependsOn(tasks.test)
 	reports {
 		xml.required = true
 		html.required = true
 	}
-	// The *Application class just starts Spring, so leave it out of coverage
+	// The *Application class and OpenAPI-generated classes are excluded from coverage
 	classDirectories.setFrom(
 		files(classDirectories.files.map {
-			fileTree(it) { exclude("**/*Application.class") }
+			fileTree(it) { exclude(jacocoExcludes) }
 		})
 	)
+}
+
+tasks.jacocoTestCoverageVerification {
+	dependsOn(tasks.test)
+	classDirectories.setFrom(
+		files(classDirectories.files.map {
+			fileTree(it) { exclude(jacocoExcludes) }
+		})
+	)
+	violationRules {
+		rule {
+			limit {
+				counter = "LINE"
+				value = "COVEREDRATIO"
+				minimum = "0.80".toBigDecimal()
+			}
+			limit {
+				counter = "BRANCH"
+				value = "COVEREDRATIO"
+				minimum = "0.80".toBigDecimal()
+			}
+		}
+	}
+}
+
+tasks.check {
+	dependsOn(tasks.jacocoTestCoverageVerification)
 }

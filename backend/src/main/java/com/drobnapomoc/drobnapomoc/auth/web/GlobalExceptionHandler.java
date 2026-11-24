@@ -17,50 +17,40 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.Objects;
+
 @RestControllerAdvice
 @NullMarked
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(EmailAlreadyTakenException.class)
-    public ResponseEntity<ErrorResponseRest> handleEmailAlreadyTaken(final EmailAlreadyTakenException ex) {
-        final var error = new ErrorResponseRest("EMAIL_TAKEN", "Konto z tym adresem email już istnieje.");
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    public ResponseEntity<ErrorResponseRest> handleEmailAlreadyTaken() {
+        return errorResponse(HttpStatus.CONFLICT, "EMAIL_TAKEN", "Konto z tym adresem email już istnieje.");
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)
-    public ResponseEntity<ErrorResponseRest> handleInvalidCredentials(final InvalidCredentialsException ex) {
-        final var error = new ErrorResponseRest("INVALID_CREDENTIALS", "Niepoprawny email lub hasło.");
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    public ResponseEntity<ErrorResponseRest> handleInvalidCredentials() {
+        return errorResponse(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "Niepoprawny email lub hasło.");
     }
 
     @ExceptionHandler(AccountSuspendedException.class)
-    public ResponseEntity<ErrorResponseRest> handleAccountSuspended(final AccountSuspendedException ex) {
-        final var error = new ErrorResponseRest("ACCOUNT_SUSPENDED", "Konto zostało zawieszone.");
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    public ResponseEntity<ErrorResponseRest> handleAccountSuspended() {
+        return errorResponse(HttpStatus.FORBIDDEN, "ACCOUNT_SUSPENDED", "Konto zostało zawieszone.");
     }
 
-    @ExceptionHandler(UnauthenticatedException.class)
-    public ResponseEntity<ErrorResponseRest> handleUnauthenticated(final UnauthenticatedException ex) {
-        final var error = new ErrorResponseRest("UNAUTHENTICATED", "Wymagane zalogowanie.");
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
-    }
-
-    @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ErrorResponseRest> handleAuthentication(final AuthenticationException ex) {
-        final var error = new ErrorResponseRest("UNAUTHENTICATED", "Wymagane zalogowanie.");
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    @ExceptionHandler({UnauthenticatedException.class, AuthenticationException.class})
+    public ResponseEntity<ErrorResponseRest> handleUnauthenticated() {
+        return errorResponse(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED", "Wymagane zalogowanie.");
     }
 
     @ExceptionHandler(CsrfException.class)
-    public ResponseEntity<ErrorResponseRest> handleCsrf(final CsrfException ex) {
-        final var error = new ErrorResponseRest("CSRF_INVALID", "Brakujący lub niepoprawny token CSRF.");
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    public ResponseEntity<ErrorResponseRest> handleCsrf() {
+        return errorResponse(HttpStatus.FORBIDDEN, "CSRF_INVALID", "Brakujący lub niepoprawny token CSRF.");
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponseRest> handleAccessDenied(final AccessDeniedException ex) {
-        final var error = new ErrorResponseRest("ACCESS_DENIED", "Brak uprawnień do tej operacji.");
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    public ResponseEntity<ErrorResponseRest> handleAccessDenied() {
+        return errorResponse(HttpStatus.FORBIDDEN, "ACCESS_DENIED", "Brak uprawnień do tej operacji.");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -68,25 +58,32 @@ public class GlobalExceptionHandler {
         final var fieldErrors = ex.getBindingResult().getFieldErrors().stream()
                 .map(fieldError -> new FieldErrorRest(
                         fieldError.getField(),
-                        fieldError.getDefaultMessage() != null ? fieldError.getDefaultMessage() : "Niepoprawna wartość"
+                        Objects.requireNonNullElse(fieldError.getDefaultMessage(), "Niepoprawna wartość")
                 ))
                 .toList();
 
         final var error = new ErrorResponseRest("VALIDATION_FAILED", "Dane nie przeszły walidacji.");
         error.setErrors(fieldErrors);
 
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(error);
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).body(error);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponseRest> handleHttpMessageNotReadable(final HttpMessageNotReadableException ex) {
-        final var error = new ErrorResponseRest("MALFORMED_REQUEST", "Treść żądania nie jest poprawnym JSON-em.");
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    public ResponseEntity<ErrorResponseRest> handleHttpMessageNotReadable() {
+        return errorResponse(HttpStatus.BAD_REQUEST, "MALFORMED_REQUEST", "Treść żądania nie jest poprawnym JSON-em.");
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponseRest> handleIllegalArgument(final IllegalArgumentException ex) {
-        final var error = new ErrorResponseRest("MALFORMED_REQUEST", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        final var message = Objects.requireNonNullElse(ex.getMessage(), "Niepoprawne parametry żądania.");
+        return errorResponse(HttpStatus.BAD_REQUEST, "MALFORMED_REQUEST", message);
+    }
+
+    private ResponseEntity<ErrorResponseRest> errorResponse(
+            final HttpStatus status,
+            final String code,
+            final String message
+    ) {
+        return ResponseEntity.status(status).body(new ErrorResponseRest(code, message));
     }
 }

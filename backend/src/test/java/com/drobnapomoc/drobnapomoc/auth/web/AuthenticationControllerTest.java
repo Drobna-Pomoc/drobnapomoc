@@ -15,225 +15,385 @@ import com.drobnapomoc.drobnapomoc.auth.domain.exception.AccountSuspendedExcepti
 import com.drobnapomoc.drobnapomoc.auth.domain.exception.EmailAlreadyTakenException;
 import com.drobnapomoc.drobnapomoc.auth.domain.exception.InvalidCredentialsException;
 import com.drobnapomoc.drobnapomoc.auth.domain.exception.UnauthenticatedException;
-import org.junit.jupiter.api.BeforeEach;
+import com.drobnapomoc.drobnapomoc.auth.infrastructure.security.RestAccessDeniedHandler;
+import com.drobnapomoc.drobnapomoc.auth.infrastructure.security.RestAuthenticationEntryPoint;
+import com.drobnapomoc.drobnapomoc.auth.infrastructure.security.SecurityConfig;
+import com.drobnapomoc.drobnapomoc.auth.infrastructure.security.UserPrincipal;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.Mockito.never;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(AuthenticationApiController.class)
+@Import({
+        AuthenticationApiDelegateImpl.class,
+        AuthenticationControllerTest.MapperTestConfig.class,
+        SecurityConfig.class,
+        RestAuthenticationEntryPoint.class,
+        RestAccessDeniedHandler.class,
+        GlobalExceptionHandler.class
+})
+@DisplayName("AuthenticationController - testy warstwy WebMVC i Security")
 class AuthenticationControllerTest {
 
-    @Mock
+    private static final String REGISTER_PATH = "/v1/auth/register";
+    private static final String LOGIN_PATH = "/v1/auth/login";
+    private static final String LOGOUT_PATH = "/v1/auth/logout";
+    private static final String ME_PATH = "/v1/auth/me";
+    private static final String EMAIL = "anna.kowalska@example.com";
+    private static final String PASSWORD = "Zielony-Rower-42";
+    private static final String FIRST_NAME = "Anna";
+    private static final String LAST_NAME = "Kowalska";
+    private static final String PHONE = "+48123456789";
+    private static final String ROLE_CLIENT_VALUE = "CLIENT";
+    private static final String JSON_EMAIL_PATH = "$.email";
+    private static final String JSON_ROLES_FIRST_PATH = "$.roles[0]";
+    private static final String JSON_CODE_PATH = "$.code";
+    private static final String JSON_MESSAGE_PATH = "$.message";
+
+    @TestConfiguration(proxyBeanMethods = false)
+    static class MapperTestConfig {
+        @Bean
+        AuthWebMapper authWebMapper() {
+            return Mappers.getMapper(AuthWebMapper.class);
+        }
+    }
+
+    @Autowired
+    private MockMvcTester mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @MockitoBean
     private RegisterUserUseCase registerUserUseCase;
 
-    @Mock
+    @MockitoBean
     private LoginUserUseCase loginUserUseCase;
 
-    @Mock
+    @MockitoBean
     private LogoutUserUseCase logoutUserUseCase;
 
-    @Mock
+    @MockitoBean
     private GetCurrentUserUseCase getCurrentUserUseCase;
 
-    private MockMvc mockMvc;
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
-    @BeforeEach
-    void setUp() {
-        final var authWebMapper = Mappers.getMapper(AuthWebMapper.class);
-        final var delegate = new AuthenticationApiDelegateImpl(
-                registerUserUseCase,
-                loginUserUseCase,
-                logoutUserUseCase,
-                getCurrentUserUseCase,
-                authWebMapper
-        );
-        final var controller = new AuthenticationApiController(delegate);
-
-        mockMvc = MockMvcBuilders.standaloneSetup(controller)
-                .setControllerAdvice(new GlobalExceptionHandler())
-                .build();
-    }
-
-    @Test
-    @DisplayName("POST /v1/auth/register powinna zwrócić 201 i zarejestrowanego użytkownika")
-    void shouldRegisterAndReturnCreated() throws Exception {
-        // given
-        final var input = new RegisterInputRest(
-                "anna.kowalska@example.com",
-                "Zielony-Rower-42",
-                "Anna",
-                "Kowalska",
-                "+48123456789"
-        );
-
-        final var currentUserDto = new CurrentUserDto(
+    private static CurrentUserDto sampleUser() {
+        return new CurrentUserDto(
                 123L,
-                "anna.kowalska@example.com",
-                "Anna",
-                "Kowalska",
-                "+48123456789",
+                EMAIL,
+                FIRST_NAME,
+                LAST_NAME,
+                PHONE,
                 Set.of(AccountRole.CLIENT)
         );
-
-        when(registerUserUseCase.register(any(RegisterUserCommand.class))).thenReturn(currentUserDto);
-
-        // when & then
-        mockMvc.perform(post("/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(input)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(123))
-                .andExpect(jsonPath("$.email").value("anna.kowalska@example.com"))
-                .andExpect(jsonPath("$.firstName").value("Anna"))
-                .andExpect(jsonPath("$.lastName").value("Kowalska"))
-                .andExpect(jsonPath("$.phone").value("+48123456789"))
-                .andExpect(jsonPath("$.roles[0]").value("CLIENT"));
     }
 
-    @Test
-    @DisplayName("POST /v1/auth/register powinna zwrócić 409 gdy email jest zajęty")
-    void shouldReturnConflictWhenEmailTaken() throws Exception {
-        // given
-        final var input = new RegisterInputRest(
-                "anna.kowalska@example.com",
-                "Zielony-Rower-42",
-                "Anna",
-                "Kowalska",
-                "+48123456789"
-        );
+    @Nested
+    @DisplayName("POST /v1/auth/register")
+    class RegisterEndpointTests {
 
-        when(registerUserUseCase.register(any(RegisterUserCommand.class)))
-                .thenThrow(new EmailAlreadyTakenException("anna.kowalska@example.com"));
+        @Test
+        @DisplayName("Powinno zwrócić 201 Created i dane zarejestrowanego użytkownika")
+        void shouldRegisterAndReturnCreated() {
+            // given
+            final var input = new RegisterInputRest(EMAIL, PASSWORD, FIRST_NAME, LAST_NAME, PHONE);
+            given(registerUserUseCase.register(any(RegisterUserCommand.class))).willReturn(sampleUser());
 
-        // when & then
-        mockMvc.perform(post("/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(input)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("EMAIL_TAKEN"))
-                .andExpect(jsonPath("$.message").value("Konto z tym adresem email już istnieje."));
+            // when
+            final var result = mockMvc.post()
+                    .uri(REGISTER_PATH)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(input))
+                    .exchange();
+
+            // then
+            assertThat(result)
+                    .hasStatus(HttpStatus.CREATED)
+                    .bodyJson()
+                    .satisfies(json -> {
+                        assertThat(json).extractingPath("$.id").isEqualTo(123);
+                        assertThat(json).extractingPath(JSON_EMAIL_PATH).isEqualTo(EMAIL);
+                        assertThat(json).extractingPath("$.firstName").isEqualTo(FIRST_NAME);
+                        assertThat(json).extractingPath("$.lastName").isEqualTo(LAST_NAME);
+                        assertThat(json).extractingPath("$.phone").isEqualTo(PHONE);
+                        assertThat(json).extractingPath(JSON_ROLES_FIRST_PATH).isEqualTo(ROLE_CLIENT_VALUE);
+                    });
+
+            then(registerUserUseCase).should().register(
+                    new RegisterUserCommand(EMAIL, PASSWORD, FIRST_NAME, LAST_NAME, PHONE)
+            );
+        }
+
+        @Test
+        @DisplayName("Powinno zwrócić 409 Conflict gdy email jest już zajęty")
+        void shouldReturnConflictWhenEmailTaken() {
+            // given
+            final var input = new RegisterInputRest(EMAIL, PASSWORD, FIRST_NAME, LAST_NAME, PHONE);
+            given(registerUserUseCase.register(any(RegisterUserCommand.class)))
+                    .willThrow(new EmailAlreadyTakenException(EMAIL));
+
+            // when
+            final var result = mockMvc.post()
+                    .uri(REGISTER_PATH)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(input))
+                    .exchange();
+
+            // then
+            assertThat(result)
+                    .hasStatus(HttpStatus.CONFLICT)
+                    .bodyJson()
+                    .satisfies(json -> {
+                        assertThat(json).extractingPath(JSON_CODE_PATH).isEqualTo("EMAIL_TAKEN");
+                        assertThat(json).extractingPath(JSON_MESSAGE_PATH).isEqualTo("Konto z tym adresem email już istnieje.");
+                    });
+        }
+
+        @Test
+        @DisplayName("Powinno zwrócić 422 Unprocessable Content gdy dane wejściowe nie przechodzą walidacji")
+        void shouldReturnUnprocessableEntityWhenValidationFails() {
+            // given
+            final var invalidInput = new RegisterInputRest(
+                    "niepoprawny-email",
+                    "krotkie",
+                    "",
+                    LAST_NAME,
+                    "123"
+            );
+
+            // when
+            final var result = mockMvc.post()
+                    .uri(REGISTER_PATH)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(invalidInput))
+                    .exchange();
+
+            // then
+            assertThat(result)
+                    .hasStatus(HttpStatus.UNPROCESSABLE_CONTENT)
+                    .bodyJson()
+                    .satisfies(json -> {
+                        assertThat(json).extractingPath(JSON_CODE_PATH).isEqualTo("VALIDATION_FAILED");
+                        assertThat(json).extractingPath("$.errors").asArray().isNotEmpty();
+                    });
+
+            then(registerUserUseCase).should(never()).register(any());
+        }
+
+        @Test
+        @DisplayName("Powinno zwrócić 400 Bad Request dla niepoprawnego JSON")
+        void shouldReturnBadRequestWhenJsonIsMalformed() {
+            // given
+            final var malformedJson = "{ \"email\": ";
+
+            // when
+            final var result = mockMvc.post()
+                    .uri(REGISTER_PATH)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(malformedJson)
+                    .exchange();
+
+            // then
+            assertThat(result)
+                    .hasStatus(HttpStatus.BAD_REQUEST)
+                    .bodyJson()
+                    .extractingPath(JSON_CODE_PATH).isEqualTo("MALFORMED_REQUEST");
+        }
     }
 
-    @Test
-    @DisplayName("POST /v1/auth/login powinna zwrócić 200 i zalogowanego użytkownika")
-    void shouldLoginAndReturnCurrentUser() throws Exception {
-        // given
-        final var input = new LoginInputRest("anna.kowalska@example.com", "Zielony-Rower-42");
-        final var currentUserDto = new CurrentUserDto(
-                123L,
-                "anna.kowalska@example.com",
-                "Anna",
-                "Kowalska",
-                "+48123456789",
-                Set.of(AccountRole.CLIENT)
-        );
+    @Nested
+    @DisplayName("POST /v1/auth/login")
+    class LoginEndpointTests {
 
-        when(loginUserUseCase.login(any(LoginUserCommand.class))).thenReturn(currentUserDto);
+        @Test
+        @DisplayName("Powinno zwrócić 200 OK i dane zalogowanego użytkownika")
+        void shouldLoginAndReturnCurrentUser() {
+            // given
+            final var input = new LoginInputRest(EMAIL, PASSWORD);
+            given(loginUserUseCase.login(any(LoginUserCommand.class))).willReturn(sampleUser());
 
-        // when & then
-        mockMvc.perform(post("/v1/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(input)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(123))
-                .andExpect(jsonPath("$.email").value("anna.kowalska@example.com"));
+            // when
+            final var result = mockMvc.post()
+                    .uri(LOGIN_PATH)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(input))
+                    .exchange();
+
+            // then
+            assertThat(result)
+                    .hasStatusOk()
+                    .bodyJson()
+                    .satisfies(json -> {
+                        assertThat(json).extractingPath("$.id").isEqualTo(123);
+                        assertThat(json).extractingPath(JSON_EMAIL_PATH).isEqualTo(EMAIL);
+                        assertThat(json).extractingPath(JSON_ROLES_FIRST_PATH).isEqualTo(ROLE_CLIENT_VALUE);
+                    });
+
+            then(loginUserUseCase).should().login(new LoginUserCommand(EMAIL, PASSWORD));
+        }
+
+        @Test
+        @DisplayName("Powinno zwrócić 401 Unauthorized przy błędnych danych logowania")
+        void shouldReturnUnauthorizedWhenInvalidCredentials() {
+            // given
+            final var input = new LoginInputRest(EMAIL, "ZleHaslo");
+            given(loginUserUseCase.login(any(LoginUserCommand.class)))
+                    .willThrow(new InvalidCredentialsException());
+
+            // when
+            final var result = mockMvc.post()
+                    .uri(LOGIN_PATH)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(input))
+                    .exchange();
+
+            // then
+            assertThat(result)
+                    .hasStatus(HttpStatus.UNAUTHORIZED)
+                    .bodyJson()
+                    .satisfies(json -> {
+                        assertThat(json).extractingPath(JSON_CODE_PATH).isEqualTo("INVALID_CREDENTIALS");
+                        assertThat(json).extractingPath(JSON_MESSAGE_PATH).isEqualTo("Niepoprawny email lub hasło.");
+                    });
+        }
+
+        @Test
+        @DisplayName("Powinno zwrócić 403 Forbidden gdy konto jest zawieszone")
+        void shouldReturnForbiddenWhenAccountSuspended() {
+            // given
+            final var input = new LoginInputRest("zawieszony@example.com", PASSWORD);
+            given(loginUserUseCase.login(any(LoginUserCommand.class)))
+                    .willThrow(new AccountSuspendedException());
+
+            // when
+            final var result = mockMvc.post()
+                    .uri(LOGIN_PATH)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(input))
+                    .exchange();
+
+            // then
+            assertThat(result)
+                    .hasStatus(HttpStatus.FORBIDDEN)
+                    .bodyJson()
+                    .satisfies(json -> {
+                        assertThat(json).extractingPath(JSON_CODE_PATH).isEqualTo("ACCOUNT_SUSPENDED");
+                        assertThat(json).extractingPath(JSON_MESSAGE_PATH).isEqualTo("Konto zostało zawieszone.");
+                    });
+        }
     }
 
-    @Test
-    @DisplayName("POST /v1/auth/login powinna zwrócić 401 przy błędnych danych logowania")
-    void shouldReturnUnauthorizedWhenInvalidCredentials() throws Exception {
-        // given
-        final var input = new LoginInputRest("anna.kowalska@example.com", "ZleHaslo");
-        when(loginUserUseCase.login(any(LoginUserCommand.class)))
-                .thenThrow(new InvalidCredentialsException());
+    @Nested
+    @DisplayName("POST /v1/auth/logout")
+    class LogoutEndpointTests {
 
-        // when & then
-        mockMvc.perform(post("/v1/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(input)))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value("INVALID_CREDENTIALS"))
-                .andExpect(jsonPath("$.message").value("Niepoprawny email lub hasło."));
+        @Test
+        @DisplayName("Powinno zwrócić 204 No Content i wywołać LogoutUserUseCase")
+        void shouldLogoutAndReturnNoContent() {
+            // given
+            willDoNothing().given(logoutUserUseCase).logout();
+
+            // when
+            final var result = mockMvc.post()
+                    .uri(LOGOUT_PATH)
+                    .exchange();
+
+            // then
+            assertThat(result).hasStatus(HttpStatus.NO_CONTENT);
+            then(logoutUserUseCase).should().logout();
+        }
     }
 
-    @Test
-    @DisplayName("POST /v1/auth/login powinna zwrócić 403 gdy konto jest zawieszone")
-    void shouldReturnForbiddenWhenAccountSuspended() throws Exception {
-        // given
-        final var input = new LoginInputRest("zawieszony@example.com", "Zielony-Rower-42");
-        when(loginUserUseCase.login(any(LoginUserCommand.class)))
-                .thenThrow(new AccountSuspendedException());
+    @Nested
+    @DisplayName("GET /v1/auth/me")
+    class CurrentUserEndpointTests {
 
-        // when & then
-        mockMvc.perform(post("/v1/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(input)))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value("ACCOUNT_SUSPENDED"))
-                .andExpect(jsonPath("$.message").value("Konto zostało zawieszone."));
-    }
+        @Test
+        @DisplayName("Powinno zwrócić 200 OK i dane zalogowanego użytkownika oraz ustawić cookie XSRF-TOKEN")
+        void shouldGetCurrentUserWhenAuthenticated() {
+            // given
+            final var principal = new UserPrincipal(123L, EMAIL, Set.of(AccountRole.CLIENT));
+            given(getCurrentUserUseCase.getCurrentUser()).willReturn(sampleUser());
 
-    @Test
-    @DisplayName("POST /v1/auth/logout powinna zwrócić 204 No Content")
-    void shouldLogoutAndReturnNoContent() throws Exception {
-        // given
-        doNothing().when(logoutUserUseCase).logout();
+            // when
+            final var result = mockMvc.get()
+                    .uri(ME_PATH)
+                    .with(user(principal))
+                    .exchange();
 
-        // when & then
-        mockMvc.perform(post("/v1/auth/logout"))
-                .andExpect(status().isNoContent());
-    }
+            // then
+            assertThat(result)
+                    .hasStatusOk()
+                    .satisfies(mvcResult -> assertThat(mvcResult.getResponse().getCookie("XSRF-TOKEN")).isNotNull())
+                    .bodyJson()
+                    .satisfies(json -> {
+                        assertThat(json).extractingPath("$.id").isEqualTo(123);
+                        assertThat(json).extractingPath(JSON_EMAIL_PATH).isEqualTo(EMAIL);
+                        assertThat(json).extractingPath(JSON_ROLES_FIRST_PATH).isEqualTo(ROLE_CLIENT_VALUE);
+                    });
+        }
 
-    @Test
-    @DisplayName("GET /v1/auth/me powinna zwrócić 200 i dane zalogowanego użytkownika")
-    void shouldGetCurrentUser() throws Exception {
-        // given
-        final var currentUserDto = new CurrentUserDto(
-                123L,
-                "anna.kowalska@example.com",
-                "Anna",
-                "Kowalska",
-                "+48123456789",
-                Set.of(AccountRole.CLIENT)
-        );
+        @Test
+        @DisplayName("Powinno zwrócić 401 UNAUTHENTICATED przez Spring Security gdy żądanie nie jest uwierzytelnione")
+        void shouldReturnUnauthorizedBySecurityFilterChainWhenAnonymous() {
+            // given
+            // brak uwierzytelnionego użytkownika w żądaniu
 
-        when(getCurrentUserUseCase.getCurrentUser()).thenReturn(currentUserDto);
+            // when
+            final var result = mockMvc.get()
+                    .uri(ME_PATH)
+                    .exchange();
 
-        // when & then
-        mockMvc.perform(get("/v1/auth/me"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(123))
-                .andExpect(jsonPath("$.email").value("anna.kowalska@example.com"));
-    }
+            // then
+            assertThat(result)
+                    .hasStatus(HttpStatus.UNAUTHORIZED)
+                    .bodyJson()
+                    .satisfies(json -> {
+                        assertThat(json).extractingPath(JSON_CODE_PATH).isEqualTo("UNAUTHENTICATED");
+                        assertThat(json).extractingPath(JSON_MESSAGE_PATH).isEqualTo("Wymagane zalogowanie.");
+                    });
 
-    @Test
-    @DisplayName("GET /v1/auth/me powinna zwrócić 401 gdy użytkownik nie jest zalogowany")
-    void shouldReturnUnauthorizedWhenUnauthenticated() throws Exception {
-        // given
-        when(getCurrentUserUseCase.getCurrentUser()).thenThrow(new UnauthenticatedException());
+            then(getCurrentUserUseCase).shouldHaveNoInteractions();
+        }
 
-        // when & then
-        mockMvc.perform(get("/v1/auth/me"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value("UNAUTHENTICATED"))
-                .andExpect(jsonPath("$.message").value("Wymagane zalogowanie."));
+        @Test
+        @DisplayName("Powinno zwrócić 401 UNAUTHENTICATED gdy use case rzuci UnauthenticatedException")
+        void shouldReturnUnauthorizedWhenUseCaseThrowsUnauthenticated() {
+            // given
+            final var principal = new UserPrincipal(123L, EMAIL, Set.of(AccountRole.CLIENT));
+            given(getCurrentUserUseCase.getCurrentUser()).willThrow(new UnauthenticatedException());
+
+            // when
+            final var result = mockMvc.get()
+                    .uri(ME_PATH)
+                    .with(user(principal))
+                    .exchange();
+
+            // then
+            assertThat(result)
+                    .hasStatus(HttpStatus.UNAUTHORIZED)
+                    .bodyJson()
+                    .extractingPath(JSON_CODE_PATH).isEqualTo("UNAUTHENTICATED");
+        }
     }
 }
