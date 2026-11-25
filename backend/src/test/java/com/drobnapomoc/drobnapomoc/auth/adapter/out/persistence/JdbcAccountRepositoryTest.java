@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @JdbcTest
-@Import({TestcontainersConfiguration.class, JdbcAccountRepository.class})
+@Import({TestcontainersConfiguration.class, JdbcAccountRepository.class, AccountRowMapper.class})
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ExtendWith(SoftAssertionsExtension.class)
 class JdbcAccountRepositoryTest {
@@ -79,6 +79,34 @@ class JdbcAccountRepositoryTest {
                 softly.assertThat(loaded.roles()).containsExactlyInAnyOrder(AccountRole.CLIENT, AccountRole.CAREGIVER);
                 softly.assertThat(loaded.createdAt()).isNotNull();
                 softly.assertThat(loaded.anonymizedAt()).isNull();
+            });
+        }
+
+        @Test
+        void shouldInsertAndFindAccountWithoutRoles() {
+            // given
+            final var account = new Account(
+                    null,
+                    "no.roles@example.com",
+                    HASH,
+                    ANNA_FIRST_NAME,
+                    KOWALSKA_LAST_NAME,
+                    PHONE,
+                    AccountStatus.ACTIVE,
+                    Set.of(),
+                    null,
+                    null
+            );
+
+            // when
+            final var generatedId = repository.insert(account);
+            final var found = repository.findById(generatedId);
+
+            // then
+            assertThat(generatedId).isPositive();
+            assertThat(found).hasValueSatisfying(loaded -> {
+                softly.assertThat(loaded.id()).isEqualTo(generatedId);
+                softly.assertThat(loaded.roles()).isEmpty();
             });
         }
 
