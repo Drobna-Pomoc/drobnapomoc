@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import * as authApi from '../api/generated/auth';
@@ -6,6 +6,13 @@ import type { CurrentUser } from '../api/generated/model';
 
 vi.mock('../api/generated/auth', () => ({
   login: vi.fn(),
+  logout: vi.fn().mockResolvedValue({ status: 204, data: {}, headers: new Headers() }),
+  register: vi.fn(),
+  getCurrentUser: vi.fn().mockResolvedValue({
+    status: 401,
+    data: { code: 'UNAUTHENTICATED', message: 'Brak sesji' },
+    headers: new Headers(),
+  }),
 }));
 
 describe('AuthContext', () => {
@@ -37,6 +44,11 @@ describe('AuthContext', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(authApi.getCurrentUser).mockResolvedValue({
+      status: 401,
+      data: { code: 'UNAUTHENTICATED', message: 'Brak sesji' },
+      headers: new Headers(),
+    });
   });
 
   it('throws an error if useAuth is used outside AuthProvider', () => {
@@ -45,14 +57,39 @@ describe('AuthContext', () => {
     );
   });
 
-  it('provides null user initially', () => {
+  it('provides null user initially', async () => {
     const { result } = setupAuth();
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.user).toBeNull();
   });
 
   it('successfully logs in a user when API returns 200', async () => {
     const { result } = setupAuth();
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
     await performSuccessfulLogin(result);
+
+    expect(result.current.user).toEqual(mockUser);
+  });
+
+  it('successfully registers a user when API returns 201', async () => {
+    vi.mocked(authApi.register).mockResolvedValueOnce({
+      status: 201,
+      data: mockUser,
+      headers: new Headers(),
+    });
+
+    const { result } = setupAuth();
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(async () => {
+      await result.current.register({
+        email: 'anna.kowalska@example.com',
+        password: 'sekret123',
+        firstName: 'Anna',
+        lastName: 'Kowalska',
+        phone: '+48123456789',
+      });
+    });
 
     expect(result.current.user).toEqual(mockUser);
   });
@@ -68,6 +105,7 @@ describe('AuthContext', () => {
     });
 
     const { result } = setupAuth();
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     await expect(
       result.current.login({
@@ -87,6 +125,7 @@ describe('AuthContext', () => {
     });
 
     const { result } = setupAuth();
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     await expect(
       result.current.login({
@@ -100,11 +139,12 @@ describe('AuthContext', () => {
 
   it('logs out a user and resets user to null', async () => {
     const { result } = setupAuth();
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
     await performSuccessfulLogin(result);
     expect(result.current.user).toEqual(mockUser);
 
-    act(() => {
-      result.current.logout();
+    await act(async () => {
+      await result.current.logout();
     });
 
     expect(result.current.user).toBeNull();

@@ -1,36 +1,49 @@
-import { render, screen } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { render, screen, act } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
+import { AuthProvider } from '../context/AuthContext';
 import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
-import * as AuthContext from '../context/AuthContext';
+
+vi.mock('../api/generated/auth', () => ({
+  login: vi.fn(),
+  logout: vi.fn(),
+  register: vi.fn(),
+  getCurrentUser: vi.fn().mockResolvedValue({
+    status: 401,
+    data: { code: 'UNAUTHENTICATED', message: 'Brak sesji' },
+    headers: new Headers(),
+  }),
+}));
 
 describe('LoginPage and RegisterPage', () => {
-  it('renders LoginPage with LoginForm and register link', () => {
-    vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
-      user: null,
-      login: vi.fn(),
-      logout: vi.fn(),
+  it('renders LoginPage with LoginForm and register link', async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <AuthProvider>
+            <LoginPage />
+          </AuthProvider>
+        </MemoryRouter>
+      );
     });
-
-    render(
-      <BrowserRouter>
-        <LoginPage />
-      </BrowserRouter>
-    );
 
     expect(screen.getByLabelText(/e-mail/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /zarejestruj się/i })).toBeInTheDocument();
   });
 
-  it('renders RegisterPage with RegisterForm and login link', () => {
-    render(
-      <BrowserRouter>
-        <RegisterPage />
-      </BrowserRouter>
-    );
+  it('renders RegisterPage with RegisterForm and login link', async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <AuthProvider>
+            <RegisterPage />
+          </AuthProvider>
+        </MemoryRouter>
+      );
+    });
 
-    expect(screen.getByLabelText(/login/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/e-mail/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /zaloguj się/i })).toBeInTheDocument();
   });
 });
