@@ -21,6 +21,10 @@ repositories {
 	mavenCentral()
 }
 
+val mapstructVersion = "1.6.3"
+val lombokMapstructBindingVersion = "0.2.0"
+val archunitVersion = "1.5.1"
+
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter")
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
@@ -28,12 +32,12 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-jdbc")
 	implementation("org.springframework.boot:spring-boot-starter-flyway")
-	implementation("org.mapstruct:mapstruct")
+	implementation("org.mapstruct:mapstruct:$mapstructVersion")
 	implementation("org.jspecify:jspecify")
 	compileOnly("org.projectlombok:lombok")
 	annotationProcessor("org.projectlombok:lombok")
-	annotationProcessor("org.mapstruct:mapstruct-processor")
-	annotationProcessor("org.projectlombok:lombok-mapstruct-binding")
+	annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
+	annotationProcessor("org.projectlombok:lombok-mapstruct-binding:$lombokMapstructBindingVersion")
 	testCompileOnly("org.projectlombok:lombok")
 	testAnnotationProcessor("org.projectlombok:lombok")
 	runtimeOnly("org.flywaydb:flyway-database-postgresql")
@@ -45,7 +49,7 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-testcontainers")
 	testImplementation("org.testcontainers:testcontainers-junit-jupiter")
 	testImplementation("org.testcontainers:testcontainers-postgresql")
-	testImplementation("com.tngtech.archunit:archunit-junit6")
+	testImplementation("com.tngtech.archunit:archunit-junit6:$archunitVersion")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
