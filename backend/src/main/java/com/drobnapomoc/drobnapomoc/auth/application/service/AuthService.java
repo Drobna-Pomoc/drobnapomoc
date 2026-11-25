@@ -1,29 +1,27 @@
 package com.drobnapomoc.drobnapomoc.auth.application.service;
 
-import com.drobnapomoc.drobnapomoc.auth.application.command.CurrentUserDto;
 import com.drobnapomoc.drobnapomoc.auth.application.command.LoginUserCommand;
 import com.drobnapomoc.drobnapomoc.auth.application.command.RegisterUserCommand;
+import com.drobnapomoc.drobnapomoc.auth.application.dto.CurrentUserDto;
 import com.drobnapomoc.drobnapomoc.auth.application.port.in.GetCurrentUserUseCase;
 import com.drobnapomoc.drobnapomoc.auth.application.port.in.LoginUserUseCase;
 import com.drobnapomoc.drobnapomoc.auth.application.port.in.LogoutUserUseCase;
 import com.drobnapomoc.drobnapomoc.auth.application.port.in.RegisterUserUseCase;
+import com.drobnapomoc.drobnapomoc.auth.application.port.out.AccountRepository;
+import com.drobnapomoc.drobnapomoc.auth.application.port.out.PasswordEncoderPort;
 import com.drobnapomoc.drobnapomoc.auth.application.port.out.SessionManagerPort;
 import com.drobnapomoc.drobnapomoc.auth.domain.Account;
-import com.drobnapomoc.drobnapomoc.auth.domain.AccountRepository;
-import com.drobnapomoc.drobnapomoc.auth.domain.PasswordEncoderPort;
 import com.drobnapomoc.drobnapomoc.auth.domain.exception.AccountSuspendedException;
 import com.drobnapomoc.drobnapomoc.auth.domain.exception.EmailAlreadyTakenException;
 import com.drobnapomoc.drobnapomoc.auth.domain.exception.InvalidCredentialsException;
 import com.drobnapomoc.drobnapomoc.auth.domain.exception.UnauthenticatedException;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.NullMarked;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@NullMarked
-public class AuthService implements RegisterUserUseCase, LoginUserUseCase, LogoutUserUseCase, GetCurrentUserUseCase {
+class AuthService implements RegisterUserUseCase, LoginUserUseCase, LogoutUserUseCase, GetCurrentUserUseCase {
 
     private final AccountRepository accountRepository;
     private final PasswordEncoderPort passwordEncoder;

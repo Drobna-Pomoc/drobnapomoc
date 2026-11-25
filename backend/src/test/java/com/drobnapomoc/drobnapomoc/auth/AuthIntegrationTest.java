@@ -6,12 +6,15 @@ import com.drobnapomoc.drobnapomoc.api.model.CurrentUserRest;
 import com.drobnapomoc.drobnapomoc.api.model.ErrorResponseRest;
 import com.drobnapomoc.drobnapomoc.api.model.LoginInputRest;
 import com.drobnapomoc.drobnapomoc.api.model.RegisterInputRest;
+import com.drobnapomoc.drobnapomoc.auth.application.port.out.AccountRepository;
 import com.drobnapomoc.drobnapomoc.auth.domain.Account;
-import com.drobnapomoc.drobnapomoc.auth.domain.AccountRepository;
 import com.drobnapomoc.drobnapomoc.auth.domain.AccountStatus;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,11 +30,14 @@ import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@ExtendWith(SoftAssertionsExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureRestTestClient
 @Import(TestcontainersConfiguration.class)
-@DisplayName("Auth - testy integracyjne E2E z Testcontainers i RestTestClient")
 class AuthIntegrationTest {
+
+    @InjectSoftAssertions
+    private SoftAssertions softly;
 
     private static final String REGISTER_PATH = "/v1/auth/register";
     private static final String LOGIN_PATH = "/v1/auth/login";
@@ -68,7 +74,6 @@ class AuthIntegrationTest {
     }
 
     @Test
-    @DisplayName("Pełny cykl życia sesji: rejestracja -> /me -> wylogowanie -> odmowa dostępu -> ponowne logowanie")
     void shouldCompleteFullAuthenticationLifecycle() {
         // given
         final var registerInput = new RegisterInputRest(
@@ -79,7 +84,7 @@ class AuthIntegrationTest {
                 PHONE
         );
 
-        // when: rejestracja
+        // when
         final var registerResult = restTestClient.post()
                 .uri(REGISTER_PATH)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -89,17 +94,17 @@ class AuthIntegrationTest {
                 .expectBody(CurrentUserRest.class)
                 .returnResult();
 
-        // then: użytkownik zapisany, sesja utworzona
+        // then
         final var registeredUser = Objects.requireNonNull(registerResult.getResponseBody());
-        assertThat(registeredUser.getEmail()).isEqualTo("anna.kowalska@example.com");
-        assertThat(registeredUser.getFirstName()).isEqualTo("Anna");
-        assertThat(registeredUser.getLastName()).isEqualTo(LAST_NAME);
-        assertThat(registeredUser.getRoles()).containsExactly(AccountRoleRest.CLIENT);
+        softly.assertThat(registeredUser.getEmail()).isEqualTo("anna.kowalska@example.com");
+        softly.assertThat(registeredUser.getFirstName()).isEqualTo("Anna");
+        softly.assertThat(registeredUser.getLastName()).isEqualTo(LAST_NAME);
+        softly.assertThat(registeredUser.getRoles()).containsExactly(AccountRoleRest.CLIENT);
 
         final var registerCookies = registerResult.getResponseHeaders().getOrEmpty(HttpHeaders.SET_COOKIE);
         final var sessionId = extractCookieValue(registerCookies, SESSION_COOKIE);
 
-        // when: pobranie /v1/auth/me z aktywną sesją
+        // when
         final var meResult = restTestClient.get()
                 .uri(ME_PATH)
                 .header(HttpHeaders.COOKIE, SESSION_COOKIE_PREFIX + sessionId)
@@ -110,19 +115,19 @@ class AuthIntegrationTest {
 
         // then
         final var meUser = Objects.requireNonNull(meResult.getResponseBody());
-        assertThat(meUser.getId()).isEqualTo(registeredUser.getId());
         final var xsrfCookies = meResult.getResponseHeaders().getOrEmpty(HttpHeaders.SET_COOKIE);
         final var xsrfToken = extractCookieValue(xsrfCookies, XSRF_COOKIE);
-        assertThat(xsrfToken).isNotBlank();
+        softly.assertThat(meUser.getId()).isEqualTo(registeredUser.getId());
+        softly.assertThat(xsrfToken).isNotBlank();
 
-        // when: wylogowanie
+        // when
         restTestClient.post()
                 .uri(LOGOUT_PATH)
                 .header(HttpHeaders.COOKIE, SESSION_COOKIE_PREFIX + sessionId)
                 .exchange()
                 .expectStatus().isNoContent();
 
-        // then: stara sesja nie daje już dostępu do /v1/auth/me
+        // then
         final var afterLogoutError = Objects.requireNonNull(restTestClient.get()
                 .uri(ME_PATH)
                 .header(HttpHeaders.COOKIE, SESSION_COOKIE_PREFIX + sessionId)
@@ -134,7 +139,7 @@ class AuthIntegrationTest {
 
         assertThat(afterLogoutError.getCode()).isEqualTo("UNAUTHENTICATED");
 
-        // when: ponowne logowanie (case-insensitive email)
+        // when
         final var loginResult = restTestClient.post()
                 .uri(LOGIN_PATH)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -144,7 +149,7 @@ class AuthIntegrationTest {
                 .expectBody(CurrentUserRest.class)
                 .returnResult();
 
-        // then: nowa sesja działa poprawnie
+        // then
         final var loginCookies = loginResult.getResponseHeaders().getOrEmpty(HttpHeaders.SET_COOKIE);
         final var newSessionId = extractCookieValue(loginCookies, SESSION_COOKIE);
 
@@ -161,7 +166,6 @@ class AuthIntegrationTest {
     }
 
     @Test
-    @DisplayName("Powinno zwrócić 409 EMAIL_TAKEN przy próbie rejestracji z tym samym emailem (niezależnie od wielkości liter)")
     void shouldRejectDuplicateRegistrationCaseInsensitively() {
         // given
         final var first = new RegisterInputRest(
@@ -202,9 +206,8 @@ class AuthIntegrationTest {
     }
 
     @Test
-    @DisplayName("Powinno unieważnić sesję w locie i zwrócić 403 ACCOUNT_SUSPENDED gdy konto zostanie zawieszone")
     void shouldRejectAndInvalidateSessionWhenAccountBecomesSuspended() {
-        // given: rejestracja aktywnego użytkownika
+        // given
         final var registerResult = restTestClient.post()
                 .uri(REGISTER_PATH)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -239,7 +242,7 @@ class AuthIntegrationTest {
                 account.anonymizedAt()
         ));
 
-        // when: wywołanie /v1/auth/me na istniejącej sesji zawieszonego konta
+        // when
         final var suspendedError = Objects.requireNonNull(restTestClient.get()
                 .uri(ME_PATH)
                 .header(HttpHeaders.COOKIE, SESSION_COOKIE_PREFIX + sessionId)
@@ -249,7 +252,7 @@ class AuthIntegrationTest {
                 .returnResult()
                 .getResponseBody());
 
-        // then: zwraca 403 ACCOUNT_SUSPENDED i kolejne żądanie ma już wyczyszczoną sesję (401)
+        // then
         assertThat(suspendedError.getCode()).isEqualTo("ACCOUNT_SUSPENDED");
 
         final var unauthenticatedError = Objects.requireNonNull(restTestClient.get()
@@ -263,7 +266,6 @@ class AuthIntegrationTest {
 
         assertThat(unauthenticatedError.getCode()).isEqualTo("UNAUTHENTICATED");
 
-        // and: ponowne logowanie zawieszonego konta również zwraca 403 ACCOUNT_SUSPENDED
         final var loginError = Objects.requireNonNull(restTestClient.post()
                 .uri(LOGIN_PATH)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -278,9 +280,8 @@ class AuthIntegrationTest {
     }
 
     @Test
-    @DisplayName("Powinno egzekwować ochronę CSRF na chronionym żądaniu mutującym i akceptować poprawny X-XSRF-TOKEN")
     void shouldEnforceCsrfProtectionOnNonIgnoredEndpoint() {
-        // given: zalogowany użytkownik z pobranym tokenem XSRF-TOKEN
+        // given
         final var registerResult = restTestClient.post()
                 .uri(REGISTER_PATH)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -312,7 +313,7 @@ class AuthIntegrationTest {
                 XSRF_COOKIE
         );
 
-        // when: POST na chroniony endpoint bez nagłówka X-XSRF-TOKEN
+        // when
         final var missingCsrfResponse = Objects.requireNonNull(restTestClient.post()
                 .uri("/v1/protected-resource")
                 .header(HttpHeaders.COOKIE, SESSION_COOKIE_PREFIX + sessionId + "; " + XSRF_COOKIE + "=" + xsrfToken)
@@ -322,16 +323,14 @@ class AuthIntegrationTest {
                 .returnResult()
                 .getResponseBody());
 
-        // then: 403 CSRF_INVALID (przez RestAccessDeniedHandler -> GlobalExceptionHandler)
+        // then
         assertThat(missingCsrfResponse.getCode()).isEqualTo("CSRF_INVALID");
 
-        // when: POST na chroniony endpoint z poprawnym nagłówkiem X-XSRF-TOKEN
         restTestClient.post()
                 .uri("/v1/protected-resource")
                 .header(HttpHeaders.COOKIE, SESSION_COOKIE_PREFIX + sessionId + "; " + XSRF_COOKIE + "=" + xsrfToken)
                 .header("X-XSRF-TOKEN", xsrfToken)
                 .exchange()
-                // then: przechodzi filtr CSRF i trafia do MVC (404 zamiast 403)
                 .expectStatus().isNotFound();
     }
 }

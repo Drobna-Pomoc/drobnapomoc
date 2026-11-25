@@ -2,17 +2,19 @@ package com.drobnapomoc.drobnapomoc.auth.application.service;
 
 import com.drobnapomoc.drobnapomoc.auth.application.command.LoginUserCommand;
 import com.drobnapomoc.drobnapomoc.auth.application.command.RegisterUserCommand;
+import com.drobnapomoc.drobnapomoc.auth.application.port.out.AccountRepository;
+import com.drobnapomoc.drobnapomoc.auth.application.port.out.PasswordEncoderPort;
 import com.drobnapomoc.drobnapomoc.auth.application.port.out.SessionManagerPort;
 import com.drobnapomoc.drobnapomoc.auth.domain.Account;
-import com.drobnapomoc.drobnapomoc.auth.domain.AccountRepository;
 import com.drobnapomoc.drobnapomoc.auth.domain.AccountRole;
 import com.drobnapomoc.drobnapomoc.auth.domain.AccountStatus;
-import com.drobnapomoc.drobnapomoc.auth.domain.PasswordEncoderPort;
 import com.drobnapomoc.drobnapomoc.auth.domain.exception.AccountSuspendedException;
 import com.drobnapomoc.drobnapomoc.auth.domain.exception.EmailAlreadyTakenException;
 import com.drobnapomoc.drobnapomoc.auth.domain.exception.InvalidCredentialsException;
 import com.drobnapomoc.drobnapomoc.auth.domain.exception.UnauthenticatedException;
-import org.junit.jupiter.api.DisplayName;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,7 +27,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -33,8 +34,7 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.Mockito.never;
 
-@ExtendWith(MockitoExtension.class)
-@DisplayName("AuthService - testy logiki aplikacyjnej")
+@ExtendWith({MockitoExtension.class, SoftAssertionsExtension.class})
 class AuthServiceTest {
 
     private static final Instant CREATED_AT = Instant.parse("2026-10-20T12:00:00Z");
@@ -45,6 +45,9 @@ class AuthServiceTest {
     private static final String FIRST_NAME = "Anna";
     private static final String LAST_NAME = "Kowalska";
     private static final String PHONE = "+48123456789";
+
+    @InjectSoftAssertions
+    private SoftAssertions softly;
 
     @Mock
     private AccountRepository accountRepository;
@@ -89,11 +92,9 @@ class AuthServiceTest {
     }
 
     @Nested
-    @DisplayName("Rejestracja użytkownika")
     class RegisterTests {
 
         @Test
-        @DisplayName("Powinno znormalizować dane, zapisać klienta z rolą CLIENT i utworzyć sesję")
         void shouldRegisterNewUserSuccessfully() {
             // given
             final var command = new RegisterUserCommand(
@@ -116,26 +117,25 @@ class AuthServiceTest {
 
             // then
             final var inserted = accountCaptor.getValue();
-            assertThat(inserted.id()).isNull();
-            assertThat(inserted.email()).isEqualTo(ANNA_EMAIL);
-            assertThat(inserted.passwordHash()).isEqualTo(ENCODED_HASH);
-            assertThat(inserted.firstName()).isEqualTo(FIRST_NAME);
-            assertThat(inserted.lastName()).isEqualTo(LAST_NAME);
-            assertThat(inserted.phone()).isEqualTo(PHONE);
-            assertThat(inserted.roles()).containsExactly(AccountRole.CLIENT);
+            softly.assertThat(inserted.id()).isNull();
+            softly.assertThat(inserted.email()).isEqualTo(ANNA_EMAIL);
+            softly.assertThat(inserted.passwordHash()).isEqualTo(ENCODED_HASH);
+            softly.assertThat(inserted.firstName()).isEqualTo(FIRST_NAME);
+            softly.assertThat(inserted.lastName()).isEqualTo(LAST_NAME);
+            softly.assertThat(inserted.phone()).isEqualTo(PHONE);
+            softly.assertThat(inserted.roles()).containsExactly(AccountRole.CLIENT);
 
-            assertThat(result.id()).isEqualTo(1L);
-            assertThat(result.email()).isEqualTo(ANNA_EMAIL);
-            assertThat(result.firstName()).isEqualTo(FIRST_NAME);
-            assertThat(result.lastName()).isEqualTo(LAST_NAME);
-            assertThat(result.phone()).isEqualTo(PHONE);
-            assertThat(result.roles()).containsExactly(AccountRole.CLIENT);
+            softly.assertThat(result.id()).isEqualTo(1L);
+            softly.assertThat(result.email()).isEqualTo(ANNA_EMAIL);
+            softly.assertThat(result.firstName()).isEqualTo(FIRST_NAME);
+            softly.assertThat(result.lastName()).isEqualTo(LAST_NAME);
+            softly.assertThat(result.phone()).isEqualTo(PHONE);
+            softly.assertThat(result.roles()).containsExactly(AccountRole.CLIENT);
 
             then(sessionManager).should().createSession(savedAccount);
         }
 
         @Test
-        @DisplayName("Powinno rzucić EmailAlreadyTakenException gdy znormalizowany email już istnieje")
         void shouldThrowEmailTakenExceptionWhenEmailAlreadyExists() {
             // given
             final var command = new RegisterUserCommand(
@@ -157,7 +157,6 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Powinno rzucić IllegalStateException gdy po wstawieniu nie można odnaleźć konta")
         void shouldThrowIllegalStateWhenInsertedAccountCannotBeReloaded() {
             // given
             final var command = new RegisterUserCommand(
@@ -182,11 +181,9 @@ class AuthServiceTest {
     }
 
     @Nested
-    @DisplayName("Logowanie użytkownika")
     class LoginTests {
 
         @Test
-        @DisplayName("Powinno znormalizować email, zweryfikować hasło i utworzyć sesję")
         void shouldLoginSuccessfullyWithValidCredentials() {
             // given
             final var command = new LoginUserCommand("  ANNA.Kowalska@example.com  ", VALID_PHRASE);
@@ -199,14 +196,13 @@ class AuthServiceTest {
             final var result = authService.login(command);
 
             // then
-            assertThat(result.id()).isEqualTo(1L);
-            assertThat(result.email()).isEqualTo(ANNA_EMAIL);
-            assertThat(result.roles()).containsExactly(AccountRole.CLIENT);
+            softly.assertThat(result.id()).isEqualTo(1L);
+            softly.assertThat(result.email()).isEqualTo(ANNA_EMAIL);
+            softly.assertThat(result.roles()).containsExactly(AccountRole.CLIENT);
             then(sessionManager).should().createSession(account);
         }
 
         @Test
-        @DisplayName("Powinno rzucić InvalidCredentialsException gdy konto nie istnieje")
         void shouldThrowInvalidCredentialsExceptionWhenAccountDoesNotExist() {
             // given
             final var command = new LoginUserCommand("nieistnieje@example.com", VALID_PHRASE);
@@ -221,7 +217,6 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Powinno rzucić InvalidCredentialsException przy błędnym haśle")
         void shouldThrowInvalidCredentialsExceptionWhenPasswordDoesNotMatch() {
             // given
             final var command = new LoginUserCommand(ANNA_EMAIL, "ZleHaslo");
@@ -238,7 +233,6 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Powinno rzucić AccountSuspendedException gdy konto jest zawieszone")
         void shouldThrowAccountSuspendedExceptionWhenAccountIsSuspended() {
             // given
             final var command = new LoginUserCommand(SUSPENDED_EMAIL, VALID_PHRASE);
@@ -256,11 +250,9 @@ class AuthServiceTest {
     }
 
     @Nested
-    @DisplayName("Wylogowanie i pobranie bieżącego użytkownika")
     class SessionTests {
 
         @Test
-        @DisplayName("Powinno wylogować użytkownika przez unieważnienie sesji")
         void shouldInvalidateSessionOnLogout() {
             // given
             willDoNothing().given(sessionManager).invalidateSession();
@@ -274,7 +266,6 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Powinno zwrócić dane zalogowanego aktywnego użytkownika")
         void shouldGetCurrentUserSuccessfully() {
             // given
             final var account = activeAccount();
@@ -285,16 +276,15 @@ class AuthServiceTest {
             final var result = authService.getCurrentUser();
 
             // then
-            assertThat(result.id()).isEqualTo(1L);
-            assertThat(result.email()).isEqualTo(ANNA_EMAIL);
-            assertThat(result.firstName()).isEqualTo(FIRST_NAME);
-            assertThat(result.lastName()).isEqualTo(LAST_NAME);
-            assertThat(result.phone()).isEqualTo(PHONE);
-            assertThat(result.roles()).containsExactly(AccountRole.CLIENT);
+            softly.assertThat(result.id()).isEqualTo(1L);
+            softly.assertThat(result.email()).isEqualTo(ANNA_EMAIL);
+            softly.assertThat(result.firstName()).isEqualTo(FIRST_NAME);
+            softly.assertThat(result.lastName()).isEqualTo(LAST_NAME);
+            softly.assertThat(result.phone()).isEqualTo(PHONE);
+            softly.assertThat(result.roles()).containsExactly(AccountRole.CLIENT);
         }
 
         @Test
-        @DisplayName("Powinno rzucić UnauthenticatedException gdy sesja nie jest uwierzytelniona")
         void shouldThrowUnauthenticatedExceptionWhenNoAuthenticatedUser() {
             // given
             given(sessionManager.getAuthenticatedAccountId()).willThrow(new UnauthenticatedException());
@@ -307,7 +297,6 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Powinno rzucić UnauthenticatedException gdy konto z sesji już nie istnieje")
         void shouldThrowUnauthenticatedExceptionWhenAccountNotFoundInRepository() {
             // given
             given(sessionManager.getAuthenticatedAccountId()).willReturn(404L);
@@ -321,7 +310,6 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Powinno unieważnić sesję i rzucić AccountSuspendedException gdy konto zostało zawieszone")
         void shouldInvalidateSessionAndThrowWhenCurrentAccountIsSuspended() {
             // given
             final var account = suspendedAccount();
@@ -336,7 +324,6 @@ class AuthServiceTest {
         }
 
         @Test
-        @DisplayName("Powinno rzucić IllegalStateException gdy konto z repozytorium nie ma ustawionego ID")
         void shouldThrowIllegalStateWhenAccountHasNullId() {
             // given
             final var accountWithoutId = Account.createClient(

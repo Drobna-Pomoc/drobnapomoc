@@ -1,13 +1,11 @@
 package com.drobnapomoc.drobnapomoc.auth.domain;
 
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Set;
 
-@NullMarked
 public record Account(
         @Nullable Long id,
         String email,

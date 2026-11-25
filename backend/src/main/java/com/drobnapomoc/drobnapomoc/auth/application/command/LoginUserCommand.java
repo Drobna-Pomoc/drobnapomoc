@@ -1,10 +1,7 @@
 package com.drobnapomoc.drobnapomoc.auth.application.command;
 
-import org.jspecify.annotations.NullMarked;
-
 import java.util.Objects;
 
-@NullMarked
 public record LoginUserCommand(
         String email,
         String password
