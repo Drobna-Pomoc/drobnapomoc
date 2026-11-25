@@ -24,7 +24,7 @@ const Topbar = () => {
       <div className="topbar-right">
         {user ? (
           <>
-            {/* <span className="topbar-user-greeting">Witaj, {user.firstName}!</span> */}
+            <span className="topbar-user-greeting">Witaj, {user.firstName}!</span>
             <Link to="/dashboard" className="topbar-btn topbar-btn-panel">
               Przejdź do panelu
             </Link>
