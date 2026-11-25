@@ -16,8 +16,10 @@ describe('Topbar', () => {
   it('renders phone number and login/register buttons when user is guest', () => {
     vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
       user: null,
+      isLoading: false,
       login: vi.fn(),
       logout: mockLogout,
+      register: vi.fn()
     });
 
     render(
@@ -45,8 +47,10 @@ describe('Topbar', () => {
 
     vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
       user: mockUser,
+      isLoading: false,
       login: vi.fn(),
       logout: mockLogout,
+      register: vi.fn()
     });
 
     render(
