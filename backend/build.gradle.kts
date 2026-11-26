@@ -115,7 +115,8 @@ tasks.test {
 
 val jacocoExcludes = listOf(
 	"**/com/drobnapomoc/drobnapomoc/api/**",
-	"**/*Application*"
+	"**/*Application*",
+	"**/*MapperImpl*"
 )
 
 tasks.jacocoTestReport {
@@ -124,7 +125,7 @@ tasks.jacocoTestReport {
 		xml.required = true
 		html.required = true
 	}
-	// The *Application class and OpenAPI-generated classes are excluded from coverage
+	// The *Application class, OpenAPI-generated classes and MapStruct-generated *MapperImpl classes are excluded from coverage
 	classDirectories.setFrom(
 		files(classDirectories.files.map {
 			fileTree(it) { exclude(jacocoExcludes) }
