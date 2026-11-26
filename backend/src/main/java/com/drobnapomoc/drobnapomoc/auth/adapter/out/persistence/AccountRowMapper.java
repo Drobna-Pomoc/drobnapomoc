@@ -3,6 +3,7 @@ package com.drobnapomoc.drobnapomoc.auth.adapter.out.persistence;
 import com.drobnapomoc.drobnapomoc.auth.domain.Account;
 import com.drobnapomoc.drobnapomoc.auth.domain.AccountRole;
 import com.drobnapomoc.drobnapomoc.auth.domain.AccountStatus;
+import jakarta.annotation.Nullable;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 
@@ -48,8 +49,9 @@ class AccountRowMapper implements RowMapper<Account> {
         }
     }
 
+    @Nullable
     private static Instant getInstant(final ResultSet rs, final String column) throws SQLException {
         final var dateTime = rs.getObject(column, OffsetDateTime.class);
-        return dateTime.toInstant();
+        return dateTime != null ? dateTime.toInstant() : null;
     }
 }
