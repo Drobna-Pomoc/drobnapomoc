@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -62,6 +63,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/v1/auth/register", "/v1/auth/login", "/v1/auth/logout").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/v1/cities", "/v1/service-categories").permitAll()
                         .anyRequest().authenticated()
                 );
 
