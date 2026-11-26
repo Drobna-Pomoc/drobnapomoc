@@ -57,10 +57,22 @@ describe('AuthContext', () => {
     );
   });
 
-  it('provides null user initially', async () => {
+  it('provides null user initially when session is unauthenticated', async () => {
     const { result } = setupAuth();
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.user).toBeNull();
+  });
+
+  it('restores user session on mount when getCurrentUser returns 200', async () => {
+    vi.mocked(authApi.getCurrentUser).mockResolvedValueOnce({
+      status: 200,
+      data: mockUser,
+      headers: new Headers(),
+    });
+
+    const { result } = setupAuth();
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.user).toEqual(mockUser);
   });
 
   it('successfully logs in a user when API returns 200', async () => {
@@ -92,6 +104,55 @@ describe('AuthContext', () => {
     });
 
     expect(result.current.user).toEqual(mockUser);
+  });
+
+  it('throws an error when register returns non-201 status', async () => {
+    vi.mocked(authApi.register).mockResolvedValueOnce({
+      status: 409,
+      data: {
+        code: 'EMAIL_TAKEN',
+        message: 'Konto z tym adresem email juz istnieje.',
+      },
+      headers: new Headers(),
+    });
+
+    const { result } = setupAuth();
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await expect(
+      result.current.register({
+        email: 'anna.kowalska@example.com',
+        password: 'sekret123',
+        firstName: 'Anna',
+        lastName: 'Kowalska',
+        phone: '+48123456789',
+      })
+    ).rejects.toThrow('Konto z tym adresem email juz istnieje.');
+
+    expect(result.current.user).toBeNull();
+  });
+
+  it('throws a default error message when register returns non-201 without message', async () => {
+    vi.mocked(authApi.register).mockResolvedValueOnce({
+      status: 400,
+      data: {} as never,
+      headers: new Headers(),
+    });
+
+    const { result } = setupAuth();
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await expect(
+      result.current.register({
+        email: 'test@example.com',
+        password: 'sekret123',
+        firstName: 'Jan',
+        lastName: 'Test',
+        phone: '+48123456789',
+      })
+    ).rejects.toThrow('Błąd rejestracji');
+
+    expect(result.current.user).toBeNull();
   });
 
   it('throws an error when API returns non-200 status', async () => {
