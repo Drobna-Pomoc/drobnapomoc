@@ -15,11 +15,8 @@ import com.drobnapomoc.drobnapomoc.shared.security.RestAuthenticationEntryPoint;
 import com.drobnapomoc.drobnapomoc.shared.security.SecurityConfig;
 import com.drobnapomoc.drobnapomoc.shared.web.GlobalExceptionHandler;
 import org.junit.jupiter.api.Test;
-import org.mapstruct.factory.Mappers;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
@@ -33,7 +30,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 @WebMvcTest(DictionariesApiController.class)
 @Import({
         DictionariesApiDelegateImpl.class,
-        DictionariesControllerTest.MapperTestConfig.class,
+        DictionaryWebMapperImpl.class,
         SecurityConfig.class,
         RestAuthenticationEntryPoint.class,
         RestAccessDeniedHandler.class,
@@ -45,14 +42,6 @@ class DictionariesControllerTest {
     private static final String BASE_PATH = "/v1";
     private static final String CITIES_PATH = BASE_PATH + DictionariesApi.PATH_LIST_CITIES;
     private static final String CATEGORIES_PATH = BASE_PATH + DictionariesApi.PATH_LIST_SERVICE_CATEGORIES;
-
-    @TestConfiguration(proxyBeanMethods = false)
-    static class MapperTestConfig {
-        @Bean
-        DictionaryWebMapper dictionaryWebMapper() {
-            return Mappers.getMapper(DictionaryWebMapper.class);
-        }
-    }
 
     @Autowired
     private MockMvcTester mockMvc;
