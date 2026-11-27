@@ -10,4 +10,8 @@ public interface DictionaryRepository {
     List<City> findAllCities();
 
     List<ServiceCategory> findActiveCategories();
+
+    boolean isCategoryActive(long categoryId);
+
+    boolean districtExists(long districtId);
 }

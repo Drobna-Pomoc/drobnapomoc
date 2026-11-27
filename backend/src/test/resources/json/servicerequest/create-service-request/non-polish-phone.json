@@ -1,0 +1,13 @@
+{
+  "client": {
+    "firstName": "Janina",
+    "lastName": "Nowak",
+    "phone": "+4917612345678",
+    "street": "ul. Lipowa",
+    "houseNumber": "12A",
+    "postalCode": "20-001",
+    "districtId": 1
+  },
+  "categoryId": 1,
+  "description": "Cieknie kran w kuchni, trzeba wymienić uszczelkę."
+}

@@ -64,6 +64,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/v1/auth/register", "/v1/auth/login", "/v1/auth/logout").permitAll()
                         .requestMatchers(HttpMethod.GET, "/v1/cities", "/v1/service-categories").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/v1/service-requests").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/v1/service-requests/mine", "/v1/service-requests/mine/*").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/v1/service-requests", "/v1/service-requests/*").hasRole("CONTRACTOR")
+                        .requestMatchers("/v1/admin/**").hasAnyRole("CONSULTANT", "ADMIN")
                         .anyRequest().authenticated()
                 );
 

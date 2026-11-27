@@ -1,5 +1,7 @@
 package com.drobnapomoc.drobnapomoc.auth.domain;
 
+import com.drobnapomoc.drobnapomoc.shared.domain.AccountRole;
+
 import org.jspecify.annotations.Nullable;
 
 import java.time.Instant;

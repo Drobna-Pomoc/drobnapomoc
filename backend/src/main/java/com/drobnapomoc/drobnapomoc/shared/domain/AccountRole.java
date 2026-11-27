@@ -1,7 +1,8 @@
-package com.drobnapomoc.drobnapomoc.auth.domain;
+package com.drobnapomoc.drobnapomoc.shared.domain;
 
 /**
- * Roles assigned to a user account within the authentication domain.
+ * Roles assigned to a user account. Lives in the shared domain kernel because the session principal
+ * ({@code shared.security.UserPrincipal}) and every module's access rules use it, not only {@code auth}.
  *
  * <p>Constant names must stay strictly 1:1 in sync with:
  * <ul>

@@ -2,6 +2,7 @@ package com.drobnapomoc.drobnapomoc.shared.web;
 
 import com.drobnapomoc.drobnapomoc.api.model.ErrorResponseRest;
 import com.drobnapomoc.drobnapomoc.api.model.FieldErrorRest;
+import com.drobnapomoc.drobnapomoc.shared.domain.exception.UnauthenticatedException;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +20,7 @@ import java.util.Objects;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(AuthenticationException.class)
+    @ExceptionHandler({AuthenticationException.class, UnauthenticatedException.class})
     public ResponseEntity<ErrorResponseRest> handleUnauthenticated() {
         return errorResponse(HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED", "Wymagane zalogowanie.");
     }

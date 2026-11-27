@@ -6,7 +6,7 @@ import com.drobnapomoc.drobnapomoc.auth.application.port.out.AccountRepository;
 import com.drobnapomoc.drobnapomoc.auth.application.port.out.PasswordEncoderPort;
 import com.drobnapomoc.drobnapomoc.auth.application.port.out.SessionManagerPort;
 import com.drobnapomoc.drobnapomoc.auth.domain.Account;
-import com.drobnapomoc.drobnapomoc.auth.domain.AccountRole;
+import com.drobnapomoc.drobnapomoc.shared.domain.AccountRole;
 import com.drobnapomoc.drobnapomoc.auth.domain.AccountStatus;
 import com.drobnapomoc.drobnapomoc.auth.domain.exception.AccountSuspendedException;
 import com.drobnapomoc.drobnapomoc.auth.domain.exception.EmailAlreadyTakenException;

@@ -1,15 +1,16 @@
--- Local development data, applied only with the "dev" profile (see application-dev.yml).
-
+-- service_category
 INSERT INTO service_category (name, active) VALUES
     ('Hydraulik', true),
     ('Elektryk', true),
     ('Kominiarz', false)
 ON CONFLICT DO NOTHING;
 
+-- city
 INSERT INTO city (name) VALUES
     ('Warszawa')
 ON CONFLICT DO NOTHING;
 
+-- district
 INSERT INTO district (city_id, name) VALUES
     ((SELECT id FROM city WHERE name = 'Warszawa'), 'Bemowo'),
     ((SELECT id FROM city WHERE name = 'Warszawa'), 'Białołęka'),
@@ -31,8 +32,10 @@ INSERT INTO district (city_id, name) VALUES
     ((SELECT id FROM city WHERE name = 'Warszawa'), 'Żoliborz')
 ON CONFLICT DO NOTHING;
 
+-- password for every account: haslo123
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+-- account
 INSERT INTO account (email, password_hash, first_name, last_name, phone) VALUES
     ('client@drobnapomoc.dev',     crypt('haslo123', gen_salt('bf', 10)), 'Anna',    'Klient',     '+48600000001'),
     ('caregiver@drobnapomoc.dev',  crypt('haslo123', gen_salt('bf', 10)), 'Barbara', 'Opiekun',    '+48600000002'),
@@ -41,6 +44,7 @@ INSERT INTO account (email, password_hash, first_name, last_name, phone) VALUES
     ('admin@drobnapomoc.dev',      crypt('haslo123', gen_salt('bf', 10)), 'Edward',  'Admin',      '+48600000005')
 ON CONFLICT DO NOTHING;
 
+-- account_role
 INSERT INTO account_role (account_id, role) VALUES
     ((SELECT id FROM account WHERE email = 'client@drobnapomoc.dev'), 'CLIENT'),
     ((SELECT id FROM account WHERE email = 'caregiver@drobnapomoc.dev'), 'CAREGIVER'),

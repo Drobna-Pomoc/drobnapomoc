@@ -22,6 +22,11 @@ class JdbcDictionaryRepository implements DictionaryRepository {
     private static final String SELECT_ACTIVE_CATEGORIES_SQL =
             "SELECT id, name FROM service_category WHERE active ORDER BY name, id";
 
+    private static final String ACTIVE_CATEGORY_EXISTS_SQL =
+            "SELECT EXISTS(SELECT 1 FROM service_category WHERE id = :id AND active)";
+
+    private static final String DISTRICT_EXISTS_SQL = "SELECT EXISTS(SELECT 1 FROM district WHERE id = :id)";
+
     private final JdbcClient jdbcClient;
     private final CityRowMapper cityRowMapper;
     private final DistrictRowMapper districtRowMapper;
@@ -48,5 +53,21 @@ class JdbcDictionaryRepository implements DictionaryRepository {
         return jdbcClient.sql(SELECT_ACTIVE_CATEGORIES_SQL)
                 .query(serviceCategoryRowMapper)
                 .list();
+    }
+
+    @Override
+    public boolean isCategoryActive(final long categoryId) {
+        return jdbcClient.sql(ACTIVE_CATEGORY_EXISTS_SQL)
+                .param("id", categoryId)
+                .query(Boolean.class)
+                .single();
+    }
+
+    @Override
+    public boolean districtExists(final long districtId) {
+        return jdbcClient.sql(DISTRICT_EXISTS_SQL)
+                .param("id", districtId)
+                .query(Boolean.class)
+                .single();
     }
 }

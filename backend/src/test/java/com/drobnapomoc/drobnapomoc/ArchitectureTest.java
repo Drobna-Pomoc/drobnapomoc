@@ -6,6 +6,9 @@ import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.library.GeneralCodingRules;
 
+import static com.tngtech.archunit.base.DescribedPredicate.not;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAnyPackage;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noFields;
@@ -30,7 +33,7 @@ class ArchitectureTest {
     @ArchTest
     static final ArchRule applicationShouldNotDependOnAdaptersOrInfrastructureFrameworks =
             noClasses().that().resideInAPackage("..application..")
-                    .should().dependOnClassesThat().resideInAnyPackage(
+                    .should().dependOnClassesThat(resideInAnyPackage(
                             "..adapter..",
                             "..shared..",
                             "..api..",
@@ -38,8 +41,9 @@ class ArchitectureTest {
                             "org.springframework.security..",
                             "org.springframework.jdbc..",
                             "jakarta.servlet.."
-                    )
-                    .because("Application layer must remain isolated from adapters, OpenAPI models, and web/security/JDBC frameworks");
+                    ).and(not(resideInAPackage("..shared.domain.."))))
+                    .because("Application layer must remain isolated from adapters, OpenAPI models, and web/security/JDBC frameworks; "
+                            + "only the shared domain kernel (e.g. AccountRole) is allowed");
 
     @ArchTest
     static final ArchRule inboundAdaptersShouldNotDependOnOutboundAdapters =

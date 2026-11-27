@@ -1,0 +1,30 @@
+package com.drobnapomoc.drobnapomoc.servicerequest.domain;
+
+import org.jspecify.annotations.Nullable;
+
+import java.time.Instant;
+import java.util.Objects;
+
+/**
+ * A validated service request with its client, ready to be stored. Starts as {@link ServiceRequestStatus#NEW}.
+ */
+public record NewServiceRequest(
+        ServiceRequestClient client,
+        long categoryId,
+        String description,
+        @Nullable Instant preferredFrom,
+        @Nullable Instant preferredTo,
+        NotifyTarget notifyTarget,
+        RequestChannel channel,
+        @Nullable Long createdBy,
+        Instant expiresAt
+) {
+
+    public NewServiceRequest {
+        Objects.requireNonNull(client, "Client cannot be null");
+        Objects.requireNonNull(description, "Description cannot be null");
+        Objects.requireNonNull(notifyTarget, "NotifyTarget cannot be null");
+        Objects.requireNonNull(channel, "Channel cannot be null");
+        Objects.requireNonNull(expiresAt, "ExpiresAt cannot be null");
+    }
+}

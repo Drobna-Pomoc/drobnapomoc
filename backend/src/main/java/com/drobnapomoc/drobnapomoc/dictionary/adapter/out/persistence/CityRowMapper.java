@@ -8,9 +8,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-/**
- * Maps a city row without its districts; the repository attaches them.
- */
 @Component
 class CityRowMapper implements RowMapper<City> {
 

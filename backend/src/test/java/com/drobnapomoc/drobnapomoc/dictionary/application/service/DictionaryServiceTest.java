@@ -49,4 +49,22 @@ class DictionaryServiceTest {
         // then
         assertThat(result).isEqualTo(categories);
     }
+
+    @Test
+    void testIsCategoryActive_givenRepositoryAnswer_shouldReturnIt() {
+        // given
+        given(dictionaryRepository.isCategoryActive(3L)).willReturn(true);
+
+        // when & then
+        assertThat(dictionaryService.isCategoryActive(3L)).isTrue();
+    }
+
+    @Test
+    void testDistrictExists_givenRepositoryAnswer_shouldReturnIt() {
+        // given
+        given(dictionaryRepository.districtExists(7L)).willReturn(false);
+
+        // when & then
+        assertThat(dictionaryService.districtExists(7L)).isFalse();
+    }
 }

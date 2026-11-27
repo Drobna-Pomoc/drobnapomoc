@@ -1,6 +1,7 @@
-package com.drobnapomoc.drobnapomoc.auth.adapter.out.security;
+package com.drobnapomoc.drobnapomoc.shared.security;
 
-import com.drobnapomoc.drobnapomoc.auth.domain.AccountRole;
+import com.drobnapomoc.drobnapomoc.shared.domain.AccountRole;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.GrantedAuthority;
 

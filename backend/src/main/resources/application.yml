@@ -1,6 +1,8 @@
 spring:
   application:
     name: drobnapomoc
+  jackson:
+    default-property-inclusion: non_null
   threads:
     virtual:
       enabled: true
@@ -22,3 +24,7 @@ server:
 openapi:
   auth:
     base-path: /v1
+
+drobnapomoc:
+  service-request:
+    expiry: 14d

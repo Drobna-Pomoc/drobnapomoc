@@ -3,6 +3,7 @@ package com.drobnapomoc.drobnapomoc.auth.adapter.out.security;
 import com.drobnapomoc.drobnapomoc.auth.application.port.out.SessionManagerPort;
 import com.drobnapomoc.drobnapomoc.auth.domain.Account;
 import com.drobnapomoc.drobnapomoc.auth.domain.exception.UnauthenticatedException;
+import com.drobnapomoc.drobnapomoc.shared.security.UserPrincipal;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
