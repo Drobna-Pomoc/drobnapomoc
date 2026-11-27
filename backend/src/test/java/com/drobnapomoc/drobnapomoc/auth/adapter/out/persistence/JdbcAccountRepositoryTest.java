@@ -5,7 +5,6 @@ import com.drobnapomoc.drobnapomoc.auth.domain.Account;
 import com.drobnapomoc.drobnapomoc.auth.domain.AccountRole;
 import com.drobnapomoc.drobnapomoc.auth.domain.AccountStatus;
 import org.assertj.core.api.SoftAssertions;
-import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -35,9 +34,6 @@ class JdbcAccountRepositoryTest {
     private static final String PHONE = "+48123456789";
     private static final String HASH = "hash";
 
-    @InjectSoftAssertions
-    private SoftAssertions softly;
-
     @Autowired
     private JdbcAccountRepository repository;
 
@@ -45,7 +41,7 @@ class JdbcAccountRepositoryTest {
     class InsertAndFindByIdTests {
 
         @Test
-        void shouldInsertAndFindById() {
+        void shouldInsertAndFindById(final SoftAssertions softly) {
             // given
             final var email = "anna.kowalska@example.com";
             final var encodedHash = "$2a$10$hash";
@@ -83,7 +79,7 @@ class JdbcAccountRepositoryTest {
         }
 
         @Test
-        void shouldInsertAndFindAccountWithoutRoles() {
+        void shouldInsertAndFindAccountWithoutRoles(final SoftAssertions softly) {
             // given
             final var account = new Account(
                     null,
@@ -139,7 +135,7 @@ class JdbcAccountRepositoryTest {
     class EmailLookupTests {
 
         @Test
-        void shouldFindByEmailCaseInsensitiveAndTrimmed() {
+        void shouldFindByEmailCaseInsensitiveAndTrimmed(final SoftAssertions softly) {
             // given
             final var email = "jan.nowak@example.com";
             final var account = Account.createClient(email, HASH, "Jan", NOWAK_LAST_NAME, "+48123123123");
@@ -169,7 +165,7 @@ class JdbcAccountRepositoryTest {
         }
 
         @Test
-        void shouldCheckExistsByEmailCaseInsensitively() {
+        void shouldCheckExistsByEmailCaseInsensitively(final SoftAssertions softly) {
             // given
             repository.insert(Account.createClient("exists@example.com", HASH, "Ewa", "Lis", "+48555666777"));
 
@@ -189,7 +185,7 @@ class JdbcAccountRepositoryTest {
     class UpdateTests {
 
         @Test
-        void shouldUpdateAccountAndReplaceRoles() {
+        void shouldUpdateAccountAndReplaceRoles(final SoftAssertions softly) {
             // given
             final var id = repository.insert(
                     Account.createClient("anna@example.com", "oldHash", ANNA_FIRST_NAME, KOWALSKA_LAST_NAME, "+48111222333")

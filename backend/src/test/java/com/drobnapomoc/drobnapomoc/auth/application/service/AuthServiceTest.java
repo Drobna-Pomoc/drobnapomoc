@@ -13,7 +13,6 @@ import com.drobnapomoc.drobnapomoc.auth.domain.exception.EmailAlreadyTakenExcept
 import com.drobnapomoc.drobnapomoc.auth.domain.exception.InvalidCredentialsException;
 import com.drobnapomoc.drobnapomoc.auth.domain.exception.UnauthenticatedException;
 import org.assertj.core.api.SoftAssertions;
-import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -45,9 +44,6 @@ class AuthServiceTest {
     private static final String FIRST_NAME = "Anna";
     private static final String LAST_NAME = "Kowalska";
     private static final String PHONE = "+48123456789";
-
-    @InjectSoftAssertions
-    private SoftAssertions softly;
 
     @Mock
     private AccountRepository accountRepository;
@@ -95,7 +91,7 @@ class AuthServiceTest {
     class RegisterTests {
 
         @Test
-        void shouldRegisterNewUserSuccessfully() {
+        void shouldRegisterNewUserSuccessfully(final SoftAssertions softly) {
             // given
             final var command = new RegisterUserCommand(
                     "  Anna.Kowalska@EXAMPLE.com  ",
@@ -184,7 +180,7 @@ class AuthServiceTest {
     class LoginTests {
 
         @Test
-        void shouldLoginSuccessfullyWithValidCredentials() {
+        void shouldLoginSuccessfullyWithValidCredentials(final SoftAssertions softly) {
             // given
             final var command = new LoginUserCommand("  ANNA.Kowalska@example.com  ", VALID_PHRASE);
             final var account = activeAccount();
@@ -266,7 +262,7 @@ class AuthServiceTest {
         }
 
         @Test
-        void shouldGetCurrentUserSuccessfully() {
+        void shouldGetCurrentUserSuccessfully(final SoftAssertions softly) {
             // given
             final var account = activeAccount();
             given(sessionManager.getAuthenticatedAccountId()).willReturn(1L);

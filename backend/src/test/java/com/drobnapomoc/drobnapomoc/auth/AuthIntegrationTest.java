@@ -10,7 +10,6 @@ import com.drobnapomoc.drobnapomoc.auth.application.port.out.AccountRepository;
 import com.drobnapomoc.drobnapomoc.auth.domain.Account;
 import com.drobnapomoc.drobnapomoc.auth.domain.AccountStatus;
 import org.assertj.core.api.SoftAssertions;
-import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,9 +34,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @AutoConfigureRestTestClient
 @Import(TestcontainersConfiguration.class)
 class AuthIntegrationTest {
-
-    @InjectSoftAssertions
-    private SoftAssertions softly;
 
     private static final String REGISTER_PATH = "/v1/auth/register";
     private static final String LOGIN_PATH = "/v1/auth/login";
@@ -74,7 +70,7 @@ class AuthIntegrationTest {
     }
 
     @Test
-    void shouldCompleteFullAuthenticationLifecycle() {
+    void shouldCompleteFullAuthenticationLifecycle(final SoftAssertions softly) {
         // given
         final var registerInput = new RegisterInputRest(
                 "Anna.Kowalska@Example.COM",

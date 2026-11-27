@@ -3,7 +3,6 @@ package com.drobnapomoc.drobnapomoc.auth.adapter.out.persistence;
 import com.drobnapomoc.drobnapomoc.auth.domain.AccountRole;
 import com.drobnapomoc.drobnapomoc.auth.domain.AccountStatus;
 import org.assertj.core.api.SoftAssertions;
-import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,9 +23,6 @@ class AccountRowMapperTest {
 
     private final AccountRowMapper mapper = new AccountRowMapper();
 
-    @InjectSoftAssertions
-    private SoftAssertions softly;
-
     @Mock
     private ResultSet rs;
 
@@ -34,7 +30,7 @@ class AccountRowMapperTest {
     private Array rolesArray;
 
     @Test
-    void shouldMapFullRowWithRolesAndTimestamps() throws SQLException {
+    void shouldMapFullRowWithRolesAndTimestamps(final SoftAssertions softly) throws SQLException {
         // given
         final var createdAt = OffsetDateTime.of(2026, 3, 15, 10, 30, 0, 0, ZoneOffset.UTC);
         final var anonymizedAt = OffsetDateTime.of(2026, 4, 1, 12, 0, 0, 0, ZoneOffset.UTC);
@@ -68,7 +64,7 @@ class AccountRowMapperTest {
     }
 
     @Test
-    void shouldMapEmptyRolesAndNullTimestampsWhenDatabaseValuesAreNull() throws SQLException {
+    void shouldMapEmptyRolesAndNullTimestampsWhenDatabaseValuesAreNull(final SoftAssertions softly) throws SQLException {
         // given
         given(rs.getLong("id")).willReturn(11L);
         given(rs.getString("email")).willReturn("jan@example.com");

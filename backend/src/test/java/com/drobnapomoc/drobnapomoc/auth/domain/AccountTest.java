@@ -1,7 +1,6 @@
 package com.drobnapomoc.drobnapomoc.auth.domain;
 
 import org.assertj.core.api.SoftAssertions;
-import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -27,14 +26,11 @@ class AccountTest {
     private static final String LAST_NAME = "Kowalska";
     private static final String PHONE = "+48123456789";
 
-    @InjectSoftAssertions
-    private SoftAssertions softly;
-
     @Nested
     class CreationTests {
 
         @Test
-        void shouldCreateClientCorrectly() {
+        void shouldCreateClientCorrectly(final SoftAssertions softly) {
             // given
             final var email = "anna.kowalska@example.com";
             final var encodedHash = "hashedValue";
@@ -184,8 +180,8 @@ class AccountTest {
         }
 
         @Test
-        @SuppressWarnings("DataFlowIssue")
-        void shouldRejectNullRequiredFields() {
+        @SuppressWarnings({"DataFlowIssue", "NullAway"})
+        void shouldRejectNullRequiredFields(final SoftAssertions softly) {
             // given
             final var roles = Set.of(AccountRole.CLIENT);
 
@@ -224,7 +220,7 @@ class AccountTest {
     class BehaviorTests {
 
         @Test
-        void shouldCheckAccountStatus() {
+        void shouldCheckAccountStatus(final SoftAssertions softly) {
             // given
             final var activeAccount = Account.createClient(EMAIL, ENCODED_HASH, FIRST_NAME, LAST_NAME, PHONE);
             final var suspendedAccount = new Account(
@@ -248,7 +244,7 @@ class AccountTest {
         }
 
         @Test
-        void shouldCheckRoles() {
+        void shouldCheckRoles(final SoftAssertions softly) {
             // given
             final var account = new Account(
                     1L,
@@ -270,7 +266,7 @@ class AccountTest {
         }
 
         @Test
-        @SuppressWarnings("DataFlowIssue")
+        @SuppressWarnings({"DataFlowIssue", "NullAway"})
         void shouldRejectNullRoleInHasRole() {
             // given
             final var account = Account.createClient(EMAIL, ENCODED_HASH, FIRST_NAME, LAST_NAME, PHONE);

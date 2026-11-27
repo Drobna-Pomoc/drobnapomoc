@@ -6,7 +6,6 @@ import com.drobnapomoc.drobnapomoc.api.model.RegisterInputRest;
 import com.drobnapomoc.drobnapomoc.auth.application.dto.CurrentUserDto;
 import com.drobnapomoc.drobnapomoc.auth.domain.AccountRole;
 import org.assertj.core.api.SoftAssertions;
-import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,13 +27,10 @@ class AuthWebMapperTest {
     private static final String LAST_NAME = "Kowalska";
     private static final String PHONE = "+48123456789";
 
-    @InjectSoftAssertions
-    private SoftAssertions softly;
-
     private final AuthWebMapper mapper = Mappers.getMapper(AuthWebMapper.class);
 
     @Test
-    void shouldMapRegisterInputToCommand() {
+    void shouldMapRegisterInputToCommand(final SoftAssertions softly) {
         // given
         final var input = new RegisterInputRest(EMAIL, VALID_PHRASE, FIRST_NAME, LAST_NAME, PHONE);
 
@@ -50,7 +46,7 @@ class AuthWebMapperTest {
     }
 
     @Test
-    void shouldMapLoginInputToCommand() {
+    void shouldMapLoginInputToCommand(final SoftAssertions softly) {
         // given
         final var input = new LoginInputRest(EMAIL, VALID_PHRASE);
 
@@ -63,7 +59,7 @@ class AuthWebMapperTest {
     }
 
     @Test
-    void shouldMapCurrentUserDtoToRest() {
+    void shouldMapCurrentUserDtoToRest(final SoftAssertions softly) {
         // given
         final var dto = new CurrentUserDto(
                 42L,
@@ -110,8 +106,8 @@ class AuthWebMapperTest {
     }
 
     @Test
-    @SuppressWarnings("DataFlowIssue")
-    void shouldReturnNullForNullInputs() {
+    @SuppressWarnings({"DataFlowIssue", "NullAway"})
+    void shouldReturnNullForNullInputs(final SoftAssertions softly) {
         // given
         final RegisterInputRest nullRegister = null;
         final LoginInputRest nullLogin = null;

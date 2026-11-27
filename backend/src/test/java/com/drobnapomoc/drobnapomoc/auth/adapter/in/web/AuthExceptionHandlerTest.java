@@ -7,7 +7,6 @@ import com.drobnapomoc.drobnapomoc.auth.domain.exception.InvalidCredentialsExcep
 import com.drobnapomoc.drobnapomoc.auth.domain.exception.UnauthenticatedException;
 import com.drobnapomoc.drobnapomoc.shared.security.SecurityConfig;
 import org.assertj.core.api.SoftAssertions;
-import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,14 +33,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Import({AuthExceptionHandler.class, AuthExceptionHandlerTest.TestController.class})
 class AuthExceptionHandlerTest {
 
-    @InjectSoftAssertions
-    private SoftAssertions softly;
-
     @Autowired
     private MockMvcTester mockMvc;
 
     @Test
-    void shouldHandleEmailAlreadyTaken() {
+    void shouldHandleEmailAlreadyTaken(final SoftAssertions softly) {
         // when
         final var result = mockMvc.get().uri("/test/auth/email-taken").exchange();
 
@@ -50,12 +46,13 @@ class AuthExceptionHandlerTest {
                 result,
                 HttpStatus.CONFLICT,
                 "EMAIL_TAKEN",
-                "Konto z tym adresem email już istnieje."
+                "Konto z tym adresem email już istnieje.",
+                softly
         );
     }
 
     @Test
-    void shouldHandleInvalidCredentials() {
+    void shouldHandleInvalidCredentials(final SoftAssertions softly) {
         // when
         final var result = mockMvc.get().uri("/test/auth/invalid-credentials").exchange();
 
@@ -64,12 +61,13 @@ class AuthExceptionHandlerTest {
                 result,
                 HttpStatus.UNAUTHORIZED,
                 "INVALID_CREDENTIALS",
-                "Niepoprawny email lub hasło."
+                "Niepoprawny email lub hasło.",
+                softly
         );
     }
 
     @Test
-    void shouldHandleAccountSuspended() {
+    void shouldHandleAccountSuspended(final SoftAssertions softly) {
         // when
         final var result = mockMvc.get().uri("/test/auth/account-suspended").exchange();
 
@@ -78,12 +76,13 @@ class AuthExceptionHandlerTest {
                 result,
                 HttpStatus.FORBIDDEN,
                 "ACCOUNT_SUSPENDED",
-                "Konto zostało zawieszone."
+                "Konto zostało zawieszone.",
+                softly
         );
     }
 
     @Test
-    void shouldHandleUnauthenticatedException() {
+    void shouldHandleUnauthenticatedException(final SoftAssertions softly) {
         // when
         final var result = mockMvc.get().uri("/test/auth/unauthenticated").exchange();
 
@@ -92,15 +91,17 @@ class AuthExceptionHandlerTest {
                 result,
                 HttpStatus.UNAUTHORIZED,
                 "UNAUTHENTICATED",
-                "Wymagane zalogowanie."
+                "Wymagane zalogowanie.",
+                softly
         );
     }
 
-    private void assertErrorResponse(
+    private static void assertErrorResponse(
             final MvcTestResult result,
             final HttpStatus expectedStatus,
             final String expectedCode,
-            final String expectedMessage
+            final String expectedMessage,
+            final SoftAssertions softly
     ) {
         assertThat(result)
                 .hasStatus(expectedStatus)
