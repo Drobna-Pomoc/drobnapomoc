@@ -2,27 +2,22 @@ package com.drobnapomoc.drobnapomoc.shared.security;
 
 import com.drobnapomoc.drobnapomoc.shared.domain.AccountRole;
 
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import org.assertj.core.api.SoftAssertions;
-import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
-import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
-import org.junit.jupiter.api.extension.ExtendWith;
-
 @ExtendWith(SoftAssertionsExtension.class)
 class UserPrincipalTest {
-
-    @InjectSoftAssertions
-    private SoftAssertions softly;
 
     private static final String EMAIL = "anna@example.com";
 
     @Test
-    void shouldExposeUserDetailsAndAuthorities() {
+    void shouldExposeUserDetailsAndAuthorities(final SoftAssertions softly) {
         // given
         final var roles = Set.of(AccountRole.CLIENT, AccountRole.ADMIN);
 
@@ -43,7 +38,7 @@ class UserPrincipalTest {
     }
 
     @Test
-    void shouldEnsureRolesImmutability() {
+    void shouldEnsureRolesImmutability(final SoftAssertions softly) {
         // given
         final var mutableRoles = new HashSet<AccountRole>();
         mutableRoles.add(AccountRole.CLIENT);
@@ -60,8 +55,8 @@ class UserPrincipalTest {
     }
 
     @Test
-    @SuppressWarnings("DataFlowIssue")
-    void shouldRejectNullArguments() {
+    @SuppressWarnings({"DataFlowIssue", "NullAway"})
+    void shouldRejectNullArguments(final SoftAssertions softly) {
         // given
         final var roles = Set.of(AccountRole.CLIENT);
 

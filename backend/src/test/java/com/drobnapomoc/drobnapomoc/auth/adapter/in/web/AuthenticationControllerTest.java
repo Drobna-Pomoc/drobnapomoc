@@ -24,7 +24,6 @@ import com.drobnapomoc.drobnapomoc.shared.security.RestAuthenticationEntryPoint;
 import com.drobnapomoc.drobnapomoc.shared.security.SecurityConfig;
 import com.drobnapomoc.drobnapomoc.shared.web.GlobalExceptionHandler;
 import org.assertj.core.api.SoftAssertions;
-import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -63,9 +62,6 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
         GlobalExceptionHandler.class
 })
 class AuthenticationControllerTest {
-
-    @InjectSoftAssertions
-    private SoftAssertions softly;
 
     private static final String REGISTER_PATH = "/v1/auth/register";
     private static final String LOGIN_PATH = "/v1/auth/login";
@@ -118,7 +114,7 @@ class AuthenticationControllerTest {
     class RegisterEndpointTests {
 
         @Test
-        void shouldRegisterAndReturnCreated() {
+        void shouldRegisterAndReturnCreated(final SoftAssertions softly) {
             // given
             final var input = new RegisterInputRest(EMAIL, VALID_PHRASE, FIRST_NAME, LAST_NAME, PHONE);
             given(registerUserUseCase.register(any(RegisterUserCommand.class))).willReturn(sampleUser());
@@ -150,7 +146,7 @@ class AuthenticationControllerTest {
         }
 
         @Test
-        void shouldReturnConflictWhenEmailTaken() {
+        void shouldReturnConflictWhenEmailTaken(final SoftAssertions softly) {
             // given
             final var input = new RegisterInputRest(EMAIL, VALID_PHRASE, FIRST_NAME, LAST_NAME, PHONE);
             given(registerUserUseCase.register(any(RegisterUserCommand.class)))
@@ -175,7 +171,7 @@ class AuthenticationControllerTest {
         }
 
         @Test
-        void shouldReturnUnprocessableEntityWhenValidationFails() {
+        void shouldReturnUnprocessableEntityWhenValidationFails(final SoftAssertions softly) {
             // given
             final var invalidInput = new RegisterInputRest(
                     "niepoprawny-email",
@@ -230,7 +226,7 @@ class AuthenticationControllerTest {
     class LoginEndpointTests {
 
         @Test
-        void shouldLoginAndReturnCurrentUser() {
+        void shouldLoginAndReturnCurrentUser(final SoftAssertions softly) {
             // given
             final var input = new LoginInputRest(EMAIL, VALID_PHRASE);
             given(loginUserUseCase.login(any(LoginUserCommand.class))).willReturn(sampleUser());
@@ -257,7 +253,7 @@ class AuthenticationControllerTest {
         }
 
         @Test
-        void shouldReturnUnauthorizedWhenInvalidCredentials() {
+        void shouldReturnUnauthorizedWhenInvalidCredentials(final SoftAssertions softly) {
             // given
             final var input = new LoginInputRest(EMAIL, "ZleHaslo");
             given(loginUserUseCase.login(any(LoginUserCommand.class)))
@@ -282,7 +278,7 @@ class AuthenticationControllerTest {
         }
 
         @Test
-        void shouldReturnForbiddenWhenAccountSuspended() {
+        void shouldReturnForbiddenWhenAccountSuspended(final SoftAssertions softly) {
             // given
             final var input = new LoginInputRest("zawieszony@example.com", VALID_PHRASE);
             given(loginUserUseCase.login(any(LoginUserCommand.class)))
@@ -330,7 +326,7 @@ class AuthenticationControllerTest {
     class CurrentUserEndpointTests {
 
         @Test
-        void shouldGetCurrentUserWhenAuthenticated() {
+        void shouldGetCurrentUserWhenAuthenticated(final SoftAssertions softly) {
             // given
             final var principal = new UserPrincipal(123L, EMAIL, Set.of(AccountRole.CLIENT));
             given(getCurrentUserUseCase.getCurrentUser()).willReturn(sampleUser());
@@ -355,7 +351,7 @@ class AuthenticationControllerTest {
         }
 
         @Test
-        void shouldReturnUnauthorizedBySecurityFilterChainWhenAnonymous() {
+        void shouldReturnUnauthorizedBySecurityFilterChainWhenAnonymous(final SoftAssertions softly) {
             // given
             // brak uwierzytelnionego użytkownika w żądaniu
 

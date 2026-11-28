@@ -1,4 +1,6 @@
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
+import net.ltgt.gradle.errorprone.errorprone
+import net.ltgt.gradle.nullaway.nullaway
 
 plugins {
 	java
@@ -6,6 +8,8 @@ plugins {
 	id("org.springframework.boot") version "4.1.1"
 	id("io.spring.dependency-management") version "1.1.7"
 	id("org.openapi.generator") version "7.26.0"
+	id("net.ltgt.errorprone") version "5.1.0"
+	id("net.ltgt.nullaway") version "3.0.0"
 }
 
 group = "com.drobnapomoc"
@@ -14,6 +18,23 @@ version = "0.0.1-SNAPSHOT"
 java {
 	toolchain {
 		languageVersion = JavaLanguageVersion.of(25)
+	}
+}
+
+nullaway {
+	onlyNullMarked = true
+	jspecifyMode = true
+}
+
+tasks.withType<JavaCompile>().configureEach {
+	options.errorprone {
+		disableAllChecks = true
+		excludedPaths = ".*/build/generated/.*"
+		nullaway {
+			error()
+			treatGeneratedAsUnannotated = true
+			customContractAnnotations.add("org.springframework.lang.Contract")
+		}
 	}
 }
 
@@ -52,6 +73,8 @@ dependencies {
 	testImplementation("org.testcontainers:testcontainers-postgresql")
 	testImplementation("com.tngtech.archunit:archunit-junit6:$archunitVersion")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+	errorprone("com.google.errorprone:error_prone_core:2.42.0")
+	errorprone("com.uber.nullaway:nullaway:0.13.2")
 }
 
 val apiDir = layout.projectDirectory.dir("../api")

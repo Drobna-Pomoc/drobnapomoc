@@ -29,7 +29,6 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.assertj.core.api.SoftAssertions;
-import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,9 +38,6 @@ import static org.mockito.BDDMockito.then;
 
 @ExtendWith({MockitoExtension.class, SoftAssertionsExtension.class})
 class SpringSessionManagerAdapterTest {
-
-    @InjectSoftAssertions
-    private SoftAssertions softly;
 
     private static final String EMAIL = "anna@example.com";
 
@@ -69,7 +65,7 @@ class SpringSessionManagerAdapterTest {
     class CreateSessionTests {
 
         @Test
-        void shouldCreateSessionAndPersistSecurityContext() {
+        void shouldCreateSessionAndPersistSecurityContext(final SoftAssertions softly) {
             // given
             final var account = new Account(
                     15L,
@@ -128,7 +124,7 @@ class SpringSessionManagerAdapterTest {
     class InvalidateSessionTests {
 
         @Test
-        void shouldInvalidateExistingSessionAndClearContext() {
+        void shouldInvalidateExistingSessionAndClearContext(final SoftAssertions softly) {
             // given
             final var session = new MockHttpSession();
             request.setSession(session);
@@ -146,7 +142,7 @@ class SpringSessionManagerAdapterTest {
         }
 
         @Test
-        void shouldClearContextWhenNoHttpSessionExists() {
+        void shouldClearContextWhenNoHttpSessionExists(final SoftAssertions softly) {
             // given
             SecurityContextHolder.getContext().setAuthentication(
                     new TestingAuthenticationToken("user", "pass", "ROLE_CLIENT")
