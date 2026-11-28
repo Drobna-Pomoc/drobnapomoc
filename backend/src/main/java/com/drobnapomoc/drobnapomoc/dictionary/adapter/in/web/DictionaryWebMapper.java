@@ -5,7 +5,7 @@ import com.drobnapomoc.drobnapomoc.api.model.DistrictRest;
 import com.drobnapomoc.drobnapomoc.api.model.ServiceCategoryRest;
 import com.drobnapomoc.drobnapomoc.dictionary.domain.City;
 import com.drobnapomoc.drobnapomoc.dictionary.domain.District;
-import com.drobnapomoc.drobnapomoc.dictionary.domain.ServiceCategory;
+import com.drobnapomoc.drobnapomoc.shared.domain.ServiceCategory;
 import org.mapstruct.Mapper;
 
 import java.util.List;

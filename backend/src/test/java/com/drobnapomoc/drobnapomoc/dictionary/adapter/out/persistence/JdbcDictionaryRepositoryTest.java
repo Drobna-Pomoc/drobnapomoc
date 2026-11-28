@@ -3,7 +3,7 @@ package com.drobnapomoc.drobnapomoc.dictionary.adapter.out.persistence;
 import com.drobnapomoc.drobnapomoc.RepositoryTest;
 import com.drobnapomoc.drobnapomoc.dictionary.domain.City;
 import com.drobnapomoc.drobnapomoc.dictionary.domain.District;
-import com.drobnapomoc.drobnapomoc.dictionary.domain.ServiceCategory;
+import com.drobnapomoc.drobnapomoc.shared.domain.ServiceCategory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
@@ -53,18 +53,18 @@ class JdbcDictionaryRepositoryTest {
     }
 
     @Test
-    void testIsCategoryActive_givenActiveCategory_shouldReturnTrue() {
-        assertThat(repository.isCategoryActive(1L)).isTrue();
+    void testFindActiveCategory_givenActiveCategory_shouldReturnIt() {
+        assertThat(repository.findActiveCategory(1L)).contains(new ServiceCategory(1L, "Hydraulik"));
     }
 
     @Test
-    void testIsCategoryActive_givenInactiveCategory_shouldReturnFalse() {
-        assertThat(repository.isCategoryActive(3L)).isFalse();
+    void testFindActiveCategory_givenInactiveCategory_shouldReturnEmpty() {
+        assertThat(repository.findActiveCategory(3L)).isEmpty();
     }
 
     @Test
-    void testIsCategoryActive_givenMissingCategory_shouldReturnFalse() {
-        assertThat(repository.isCategoryActive(999_999L)).isFalse();
+    void testFindActiveCategory_givenMissingCategory_shouldReturnEmpty() {
+        assertThat(repository.findActiveCategory(999_999L)).isEmpty();
     }
 
     @Test

@@ -40,6 +40,7 @@ class ArchitectureTest {
                             "org.springframework.web..",
                             "org.springframework.security..",
                             "org.springframework.jdbc..",
+                            "org.springframework.ai..",
                             "jakarta.servlet.."
                     ).and(not(resideInAPackage("..shared.domain.."))))
                     .because("Application layer must remain isolated from adapters, OpenAPI models, and web/security/JDBC frameworks; "

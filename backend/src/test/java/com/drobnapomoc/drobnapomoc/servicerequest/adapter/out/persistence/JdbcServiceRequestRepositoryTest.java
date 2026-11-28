@@ -3,6 +3,7 @@ package com.drobnapomoc.drobnapomoc.servicerequest.adapter.out.persistence;
 import com.drobnapomoc.drobnapomoc.RepositoryTest;
 import com.drobnapomoc.drobnapomoc.servicerequest.domain.NewServiceRequest;
 import com.drobnapomoc.drobnapomoc.servicerequest.domain.NotifyTarget;
+import com.drobnapomoc.drobnapomoc.servicerequest.domain.PriceEstimate;
 import com.drobnapomoc.drobnapomoc.servicerequest.domain.RequestChannel;
 import com.drobnapomoc.drobnapomoc.servicerequest.domain.ServiceRequest;
 import com.drobnapomoc.drobnapomoc.servicerequest.domain.ServiceRequestClient;
@@ -83,19 +84,20 @@ class JdbcServiceRequestRepositoryTest {
         final var expiresAt = NOW.plus(Duration.ofDays(14));
 
         // when
-        final var id = repository.create(newRequest(null, null, null, null));
+        final var request = repository.create(newRequest(null, null, null, null));
 
         // then
-        assertThat(repository.findById(id)).hasValueSatisfying(request -> {
-            softly.assertThat(request.status()).isEqualTo(ServiceRequestStatus.NEW);
-            softly.assertThat(request.channel()).isEqualTo(RequestChannel.WEB_FORM);
-            softly.assertThat(request.client()).isEqualTo(client(null));
-            softly.assertThat(request.preferredFrom()).isNull();
-            softly.assertThat(request.preferredTo()).isNull();
-            softly.assertThat(request.estimateMinMinor()).isNull();
-            softly.assertThat(request.createdBy()).isNull();
-            softly.assertThat(request.expiresAt()).isEqualTo(expiresAt);
-            softly.assertThat(request.createdAt()).isNotNull();
+        assertThat(request).satisfies(saved -> {
+            softly.assertThat(saved.status()).isEqualTo(ServiceRequestStatus.NEW);
+            softly.assertThat(saved.channel()).isEqualTo(RequestChannel.WEB_FORM);
+            softly.assertThat(saved.client()).isEqualTo(client(null));
+            softly.assertThat(saved.preferredFrom()).isNull();
+            softly.assertThat(saved.preferredTo()).isNull();
+            softly.assertThat(saved.estimateMinMinor()).isNull();
+            softly.assertThat(saved.estimatedAt()).isNull();
+            softly.assertThat(saved.createdBy()).isNull();
+            softly.assertThat(saved.expiresAt()).isEqualTo(expiresAt);
+            softly.assertThat(saved.createdAt()).isNotNull();
         });
     }
 
@@ -106,15 +108,33 @@ class JdbcServiceRequestRepositoryTest {
         final var to = from.plus(Duration.ofHours(6));
 
         // when
-        final var id = repository.create(newRequest(ANNA_ID, from, to, "5"));
+        final var saved = repository.create(newRequest(ANNA_ID, from, to, "5"));
 
         // then
-        assertThat(repository.findById(id)).hasValueSatisfying(saved -> {
-            softly.assertThat(saved.preferredFrom()).isEqualTo(from);
-            softly.assertThat(saved.preferredTo()).isEqualTo(to);
-            softly.assertThat(saved.createdBy()).isEqualTo(ANNA_ID);
-            softly.assertThat(saved.client().apartmentNumber()).isEqualTo("5");
+        assertThat(saved).satisfies(request -> {
+            softly.assertThat(request.preferredFrom()).isEqualTo(from);
+            softly.assertThat(request.preferredTo()).isEqualTo(to);
+            softly.assertThat(request.createdBy()).isEqualTo(ANNA_ID);
+            softly.assertThat(request.client().apartmentNumber()).isEqualTo("5");
         });
+    }
+
+    @Test
+    void testCreate_givenEstimate_shouldStoreItAsPriced(final SoftAssertions softly) {
+        // given
+        final var request = new NewServiceRequest(
+                client(null), 1L, DESCRIPTION, null, null, NotifyTarget.CLIENT, RequestChannel.WEB_FORM, null,
+                NOW.plus(Duration.ofDays(14)), new PriceEstimate(8000L, 15000L), NOW
+        );
+
+        // when
+        final var saved = repository.create(request);
+
+        // then
+        softly.assertThat(saved.status()).isEqualTo(ServiceRequestStatus.PRICED);
+        softly.assertThat(saved.estimateMinMinor()).isEqualTo(8000L);
+        softly.assertThat(saved.estimateMaxMinor()).isEqualTo(15000L);
+        softly.assertThat(saved.estimatedAt()).isEqualTo(NOW);
     }
 
     @Test
@@ -173,7 +193,7 @@ class JdbcServiceRequestRepositoryTest {
     ) {
         return new NewServiceRequest(
                 client(apartmentNumber), 1L, DESCRIPTION, preferredFrom, preferredTo,
-                NotifyTarget.CLIENT, RequestChannel.WEB_FORM, createdBy, NOW.plus(Duration.ofDays(14))
+                NotifyTarget.CLIENT, RequestChannel.WEB_FORM, createdBy, NOW.plus(Duration.ofDays(14)), null, null
         );
     }
 }

@@ -1,6 +1,6 @@
 package com.drobnapomoc.drobnapomoc.dictionary.adapter.out.persistence;
 
-import com.drobnapomoc.drobnapomoc.dictionary.domain.ServiceCategory;
+import com.drobnapomoc.drobnapomoc.shared.domain.ServiceCategory;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
 

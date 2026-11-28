@@ -3,7 +3,7 @@ package com.drobnapomoc.drobnapomoc.dictionary.application.service;
 import com.drobnapomoc.drobnapomoc.dictionary.application.port.out.DictionaryRepository;
 import com.drobnapomoc.drobnapomoc.dictionary.domain.City;
 import com.drobnapomoc.drobnapomoc.dictionary.domain.District;
-import com.drobnapomoc.drobnapomoc.dictionary.domain.ServiceCategory;
+import com.drobnapomoc.drobnapomoc.shared.domain.ServiceCategory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -51,12 +52,12 @@ class DictionaryServiceTest {
     }
 
     @Test
-    void testIsCategoryActive_givenRepositoryAnswer_shouldReturnIt() {
+    void testFindActiveCategory_givenRepositoryAnswer_shouldReturnIt() {
         // given
-        given(dictionaryRepository.isCategoryActive(3L)).willReturn(true);
+        given(dictionaryRepository.findActiveCategory(3L)).willReturn(Optional.of(new ServiceCategory(3L, "Hydraulik")));
 
         // when & then
-        assertThat(dictionaryService.isCategoryActive(3L)).isTrue();
+        assertThat(dictionaryService.findActiveCategory(3L)).contains(new ServiceCategory(3L, "Hydraulik"));
     }
 
     @Test

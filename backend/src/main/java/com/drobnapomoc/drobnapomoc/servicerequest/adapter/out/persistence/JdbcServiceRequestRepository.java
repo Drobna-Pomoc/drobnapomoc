@@ -7,6 +7,7 @@ import com.drobnapomoc.drobnapomoc.servicerequest.domain.ServiceRequestListing;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Types;
 import java.time.Instant;
@@ -28,9 +29,11 @@ class JdbcServiceRequestRepository implements ServiceRequestRepository {
 
     private static final String INSERT_SERVICE_REQUEST_SQL = """
             INSERT INTO service_request (client_id, category_id, description, preferred_from, preferred_to,
-                                         notify_target, expires_at, channel, created_by)
+                                         notify_target, expires_at, channel, created_by, status,
+                                         estimate_min_minor, estimate_max_minor, estimated_at)
             VALUES (:clientId, :categoryId, :description, :preferredFrom, :preferredTo,
-                    CAST(:notifyTarget AS notify_target), :expiresAt, CAST(:channel AS request_channel), :createdBy)
+                    CAST(:notifyTarget AS notify_target), :expiresAt, CAST(:channel AS request_channel), :createdBy,
+                    CAST(:status AS service_request_status), :estimateMinMinor, :estimateMaxMinor, :estimatedAt)
             RETURNING id
             """;
 
@@ -69,8 +72,10 @@ class JdbcServiceRequestRepository implements ServiceRequestRepository {
     private final ServiceRequestListingRowMapper serviceRequestListingRowMapper;
 
     @Override
-    public long create(final NewServiceRequest request) {
+    @Transactional
+    public ServiceRequest create(final NewServiceRequest request) {
         final var client = request.client();
+        final var estimate = request.estimate();
         final var clientId = jdbcClient.sql(INSERT_CLIENT_SQL)
                 .param("firstName", client.firstName())
                 .param("lastName", client.lastName())
@@ -93,10 +98,15 @@ class JdbcServiceRequestRepository implements ServiceRequestRepository {
                 .param("expiresAt", toOffsetDateTime(request.expiresAt()), Types.TIMESTAMP_WITH_TIMEZONE)
                 .param("channel", request.channel().name())
                 .param("createdBy", request.createdBy(), Types.BIGINT)
+                .param("status", request.status().name())
+                .param("estimateMinMinor", estimate != null ? estimate.minMinor() : null, Types.BIGINT)
+                .param("estimateMaxMinor", estimate != null ? estimate.maxMinor() : null, Types.BIGINT)
+                .param("estimatedAt", toOffsetDateTime(request.estimatedAt()), Types.TIMESTAMP_WITH_TIMEZONE)
                 .query(Long.class)
                 .single();
 
-        return Objects.requireNonNull(id, "Generated id cannot be null");
+        return findById(id)
+                .orElseThrow(() -> new IllegalStateException("Stored service request not found: " + id));
     }
 
     @Override

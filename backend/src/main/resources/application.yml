@@ -10,6 +10,21 @@ spring:
     url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
     password: postgres
+  http:
+    clients:
+      # Closes the connection to Ollama shortly after the 5 s estimate timeout, so an abandoned generation stops
+      # instead of keeping the model busy. No other HTTP clients exist in the application yet.
+      read-timeout: 6s
+  ai:
+    ollama:
+      chat:
+        model: qwen2.5:3b
+        temperature: 0.2
+        num-predict: 64
+    retry:
+      # Number of retries after the first call (Spring Framework 7 retry semantics), so 0 = a single call.
+      # Request submission waits for the estimate; a failed call must fail fast instead of retrying.
+      max-attempts: 0
 
 server:
   port: 8081
@@ -28,3 +43,7 @@ openapi:
 drobnapomoc:
   service-request:
     expiry: 14d
+  price-estimate:
+    # Whether new service requests ask the local Ollama model for a price estimate (see backend/HELP.md).
+    enabled: false
+    timeout: 5s

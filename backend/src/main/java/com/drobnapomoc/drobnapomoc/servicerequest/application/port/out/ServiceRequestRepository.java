@@ -11,11 +11,9 @@ import java.util.Optional;
 public interface ServiceRequestRepository {
 
     /**
-     * Stores a new client record and the request that points to it.
-     *
-     * @return id of the new service request
+     * Stores the client record and the request in one transaction and returns the stored request.
      */
-    long create(NewServiceRequest request);
+    ServiceRequest create(NewServiceRequest request);
 
     Optional<ServiceRequest> findById(long id);
 
