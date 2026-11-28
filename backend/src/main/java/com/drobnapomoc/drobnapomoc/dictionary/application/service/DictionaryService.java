@@ -5,12 +5,13 @@ import com.drobnapomoc.drobnapomoc.dictionary.application.port.in.ListCitiesUseC
 import com.drobnapomoc.drobnapomoc.dictionary.application.port.in.ListServiceCategoriesUseCase;
 import com.drobnapomoc.drobnapomoc.dictionary.application.port.out.DictionaryRepository;
 import com.drobnapomoc.drobnapomoc.dictionary.domain.City;
-import com.drobnapomoc.drobnapomoc.dictionary.domain.ServiceCategory;
+import com.drobnapomoc.drobnapomoc.shared.domain.ServiceCategory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -32,8 +33,8 @@ class DictionaryService implements ListCitiesUseCase, ListServiceCategoriesUseCa
 
     @Override
     @Transactional(readOnly = true)
-    public boolean isCategoryActive(final long categoryId) {
-        return dictionaryRepository.isCategoryActive(categoryId);
+    public Optional<ServiceCategory> findActiveCategory(final long categoryId) {
+        return dictionaryRepository.findActiveCategory(categoryId);
     }
 
     @Override

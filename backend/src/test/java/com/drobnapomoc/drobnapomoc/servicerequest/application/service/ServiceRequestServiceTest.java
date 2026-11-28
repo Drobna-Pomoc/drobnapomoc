@@ -3,10 +3,12 @@ package com.drobnapomoc.drobnapomoc.servicerequest.application.service;
 import com.drobnapomoc.drobnapomoc.servicerequest.application.ServiceRequestProperties;
 import com.drobnapomoc.drobnapomoc.servicerequest.application.command.ClientCommand;
 import com.drobnapomoc.drobnapomoc.servicerequest.application.command.CreateServiceRequestCommand;
+import com.drobnapomoc.drobnapomoc.servicerequest.application.port.out.PriceEstimatorPort;
 import com.drobnapomoc.drobnapomoc.servicerequest.application.port.out.ServiceRequestDictionaryPort;
 import com.drobnapomoc.drobnapomoc.servicerequest.application.port.out.ServiceRequestRepository;
 import com.drobnapomoc.drobnapomoc.servicerequest.domain.NewServiceRequest;
 import com.drobnapomoc.drobnapomoc.servicerequest.domain.NotifyTarget;
+import com.drobnapomoc.drobnapomoc.servicerequest.domain.PriceEstimate;
 import com.drobnapomoc.drobnapomoc.servicerequest.domain.RequestChannel;
 import com.drobnapomoc.drobnapomoc.servicerequest.domain.ServiceRequest;
 import com.drobnapomoc.drobnapomoc.servicerequest.domain.ServiceRequestClient;
@@ -18,6 +20,7 @@ import com.drobnapomoc.drobnapomoc.servicerequest.domain.exception.ServiceReques
 import com.drobnapomoc.drobnapomoc.shared.domain.AccountRole;
 import com.drobnapomoc.drobnapomoc.shared.domain.CurrentUser;
 import com.drobnapomoc.drobnapomoc.shared.domain.CurrentUserProvider;
+import com.drobnapomoc.drobnapomoc.shared.domain.ServiceCategory;
 import com.drobnapomoc.drobnapomoc.shared.domain.exception.UnauthenticatedException;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,6 +52,7 @@ class ServiceRequestServiceTest {
     private static final Instant NOW = Instant.parse("2026-11-23T11:00:00Z");
     private static final Instant EXPIRES_AT = Instant.parse("2026-12-07T11:00:00Z");
     private static final long CATEGORY_ID = 3L;
+    private static final String CATEGORY_NAME = "Hydraulik";
     private static final long DISTRICT_ID = 7L;
     private static final long ACCOUNT_ID = 123L;
     private static final long REQUEST_ID = 1024L;
@@ -65,6 +69,9 @@ class ServiceRequestServiceTest {
     @Mock
     private CurrentUserProvider currentUserProvider;
 
+    @Mock
+    private PriceEstimatorPort priceEstimator;
+
     private ServiceRequestService service;
 
     @BeforeEach
@@ -73,6 +80,7 @@ class ServiceRequestServiceTest {
                 repository,
                 dictionaryPort,
                 currentUserProvider,
+                priceEstimator,
                 new ServiceRequestProperties(Duration.ofDays(14)),
                 Clock.fixed(NOW, ZoneOffset.UTC)
         );
@@ -91,7 +99,8 @@ class ServiceRequestServiceTest {
         // then
         assertThat(savedRequest()).isEqualTo(new NewServiceRequest(
                 new ServiceRequestClient("Janina", "Nowak", "+48600123456", "ul. Lipowa", "12A", null, "20-001", DISTRICT_ID),
-                CATEGORY_ID, DESCRIPTION, null, null, NotifyTarget.CLIENT, RequestChannel.WEB_FORM, null, EXPIRES_AT
+                CATEGORY_ID, DESCRIPTION, null, null, NotifyTarget.CLIENT, RequestChannel.WEB_FORM, null, EXPIRES_AT,
+                null, null
         ));
     }
 
@@ -144,22 +153,41 @@ class ServiceRequestServiceTest {
     }
 
     @Test
-    void testCreate_givenSavedRequestCannotBeRead_shouldThrowIllegalState() {
+    void testCreate_givenEstimateFromModel_shouldStoreItWithEstimatedAtNow() {
         // given
         givenAnonymousVisitor();
         givenDictionaryEntriesExist();
-        given(repository.create(any())).willReturn(REQUEST_ID);
-        given(repository.findById(REQUEST_ID)).willReturn(Optional.empty());
+        given(priceEstimator.estimate(CATEGORY_NAME, DESCRIPTION)).willReturn(Optional.of(new PriceEstimate(8000L, 15000L)));
+        given(repository.create(any())).willReturn(sampleRequest());
 
-        // when & then
-        assertThatThrownBy(() -> service.create(validCommand())).isInstanceOf(IllegalStateException.class);
+        // when
+        service.create(validCommand());
+
+        // then
+        final var saved = savedRequest();
+        assertThat(saved.estimate()).isEqualTo(new PriceEstimate(8000L, 15000L));
+        assertThat(saved.estimatedAt()).isEqualTo(NOW);
+    }
+
+    @Test
+    void testCreate_givenValidCommand_shouldAskEstimatorWithCategoryNameAndTrimmedDescription() {
+        // given
+        givenAnonymousVisitor();
+        givenDictionaryEntriesExist();
+        givenStoredRequest();
+
+        // when
+        service.create(command(clientWithPadding(), "  " + DESCRIPTION + "  ", null, null, null));
+
+        // then
+        then(priceEstimator).should().estimate(CATEGORY_NAME, DESCRIPTION);
     }
 
     @Test
     void testCreate_givenSeveralBusinessViolations_shouldReportAllAtOnce() {
         // given
         givenAnonymousVisitor();
-        given(dictionaryPort.isCategoryActive(CATEGORY_ID)).willReturn(false);
+        given(dictionaryPort.findActiveCategory(CATEGORY_ID)).willReturn(Optional.empty());
         given(dictionaryPort.districtExists(DISTRICT_ID)).willReturn(false);
         final var from = NOW.plus(Duration.ofDays(2));
         final var to = NOW.plus(Duration.ofDays(1));
@@ -347,13 +375,14 @@ class ServiceRequestServiceTest {
     }
 
     private void givenDictionaryEntriesExist() {
-        given(dictionaryPort.isCategoryActive(CATEGORY_ID)).willReturn(true);
+        given(dictionaryPort.findActiveCategory(CATEGORY_ID)).willReturn(Optional.of(new ServiceCategory(CATEGORY_ID, CATEGORY_NAME)));
         given(dictionaryPort.districtExists(DISTRICT_ID)).willReturn(true);
     }
 
+    /** No estimate from the model, and the repository returns the saved request. */
     private void givenStoredRequest() {
-        given(repository.create(any())).willReturn(REQUEST_ID);
-        given(repository.findById(REQUEST_ID)).willReturn(Optional.of(sampleRequest()));
+        given(priceEstimator.estimate(any(), any())).willReturn(Optional.empty());
+        given(repository.create(any())).willReturn(sampleRequest());
     }
 
     private static CurrentUser currentUser() {
@@ -404,6 +433,7 @@ class ServiceRequestServiceTest {
         final var exception = catchThrowableOfType(ServiceRequestValidationException.class, () -> service.create(command));
         assertThat(exception).isNotNull();
         then(repository).should(never()).create(any());
+        then(priceEstimator).shouldHaveNoInteractions();
         return exception.violations();
     }
 }

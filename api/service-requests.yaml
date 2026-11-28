@@ -34,8 +34,8 @@ paths:
         with a session the request is attributed to the current account.
 
         Every call creates a new client record from `client`, also when the user is logged in
-        and submits the request for someone else. The request starts as `NEW`, without
-        a price estimate.
+        and submits the request for someone else. When a price estimate is available
+        in time, the request starts as `PRICED` with the estimate; otherwise it starts as `NEW` without one.
 
         Without `notifyTarget` notifications go to the client. `CAREGIVER` means the current
         account and needs a session.

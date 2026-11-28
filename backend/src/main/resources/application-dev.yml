@@ -2,3 +2,7 @@ spring:
   flyway:
     # Local development data (dictionaries and one account per role) on top of the regular migrations.
     locations: classpath:db/migration,classpath:db/devdata
+
+drobnapomoc:
+  price-estimate:
+    enabled: true

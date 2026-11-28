@@ -3,12 +3,13 @@ package com.drobnapomoc.drobnapomoc.dictionary.adapter.out.persistence;
 import com.drobnapomoc.drobnapomoc.dictionary.application.port.out.DictionaryRepository;
 import com.drobnapomoc.drobnapomoc.dictionary.domain.City;
 import com.drobnapomoc.drobnapomoc.dictionary.domain.District;
-import com.drobnapomoc.drobnapomoc.dictionary.domain.ServiceCategory;
+import com.drobnapomoc.drobnapomoc.shared.domain.ServiceCategory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Repository
@@ -22,8 +23,8 @@ class JdbcDictionaryRepository implements DictionaryRepository {
     private static final String SELECT_ACTIVE_CATEGORIES_SQL =
             "SELECT id, name FROM service_category WHERE active ORDER BY name, id";
 
-    private static final String ACTIVE_CATEGORY_EXISTS_SQL =
-            "SELECT EXISTS(SELECT 1 FROM service_category WHERE id = :id AND active)";
+    private static final String SELECT_ACTIVE_CATEGORY_SQL =
+            "SELECT id, name FROM service_category WHERE id = :id AND active";
 
     private static final String DISTRICT_EXISTS_SQL = "SELECT EXISTS(SELECT 1 FROM district WHERE id = :id)";
 
@@ -56,11 +57,11 @@ class JdbcDictionaryRepository implements DictionaryRepository {
     }
 
     @Override
-    public boolean isCategoryActive(final long categoryId) {
-        return jdbcClient.sql(ACTIVE_CATEGORY_EXISTS_SQL)
+    public Optional<ServiceCategory> findActiveCategory(final long categoryId) {
+        return jdbcClient.sql(SELECT_ACTIVE_CATEGORY_SQL)
                 .param("id", categoryId)
-                .query(Boolean.class)
-                .single();
+                .query(serviceCategoryRowMapper)
+                .optional();
     }
 
     @Override

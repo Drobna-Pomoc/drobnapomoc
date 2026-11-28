@@ -1,6 +1,6 @@
 package com.drobnapomoc.drobnapomoc.dictionary.application.port.in;
 
-import com.drobnapomoc.drobnapomoc.dictionary.domain.ServiceCategory;
+import com.drobnapomoc.drobnapomoc.shared.domain.ServiceCategory;
 
 import java.util.List;
 

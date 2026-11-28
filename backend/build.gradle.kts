@@ -43,8 +43,15 @@ repositories {
 }
 
 val mapstructVersion = "1.6.3"
+val springAiVersion = "2.0.3"
 val lombokMapstructBindingVersion = "0.2.0"
 val archunitVersion = "1.5.1"
+
+dependencyManagement {
+	imports {
+		mavenBom("org.springframework.ai:spring-ai-bom:$springAiVersion")
+	}
+}
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter")
@@ -52,6 +59,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-jdbc")
+	implementation("org.springframework.ai:spring-ai-starter-model-ollama")
 	implementation("org.springframework.boot:spring-boot-starter-flyway")
 	implementation("org.mapstruct:mapstruct:$mapstructVersion")
 	implementation("org.jspecify:jspecify")

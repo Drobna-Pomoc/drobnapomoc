@@ -1,4 +1,4 @@
-package com.drobnapomoc.drobnapomoc.dictionary.domain;
+package com.drobnapomoc.drobnapomoc.shared.domain;
 
 import java.util.Objects;
 

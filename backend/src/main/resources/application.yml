@@ -10,6 +10,17 @@ spring:
     url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
     password: postgres
+  http:
+    clients:
+      read-timeout: 6s
+  ai:
+    ollama:
+      chat:
+        model: qwen2.5:3b
+        temperature: 0.2
+        num-predict: 64
+    retry:
+      max-attempts: 0
 
 server:
   port: 8081
@@ -28,3 +39,6 @@ openapi:
 drobnapomoc:
   service-request:
     expiry: 14d
+  price-estimate:
+    enabled: false
+    timeout: 5s

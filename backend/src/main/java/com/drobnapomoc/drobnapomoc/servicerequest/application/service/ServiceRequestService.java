@@ -10,6 +10,7 @@ import com.drobnapomoc.drobnapomoc.servicerequest.application.port.in.GetService
 import com.drobnapomoc.drobnapomoc.servicerequest.application.port.in.ListAllServiceRequestsUseCase;
 import com.drobnapomoc.drobnapomoc.servicerequest.application.port.in.ListMyServiceRequestsUseCase;
 import com.drobnapomoc.drobnapomoc.servicerequest.application.port.in.ListOpenServiceRequestsUseCase;
+import com.drobnapomoc.drobnapomoc.servicerequest.application.port.out.PriceEstimatorPort;
 import com.drobnapomoc.drobnapomoc.servicerequest.application.port.out.ServiceRequestDictionaryPort;
 import com.drobnapomoc.drobnapomoc.servicerequest.application.port.out.ServiceRequestRepository;
 import com.drobnapomoc.drobnapomoc.servicerequest.domain.NewServiceRequest;
@@ -59,13 +60,13 @@ class ServiceRequestService implements
     private final ServiceRequestRepository repository;
     private final ServiceRequestDictionaryPort dictionaryPort;
     private final CurrentUserProvider currentUserProvider;
+    private final PriceEstimatorPort priceEstimator;
     private final ServiceRequestProperties properties;
     private final Clock clock;
 
     @Override
-    @Transactional
     public ServiceRequest create(final CreateServiceRequestCommand command) {
-        final var now = clock.instant();
+        var now = clock.instant();
         final var accountId = currentUserProvider.current().map(CurrentUser::id).orElse(null);
         final var notifyTarget = Objects.requireNonNullElse(command.notifyTarget(), NotifyTarget.CLIENT);
         final var description = command.description().trim();
@@ -74,7 +75,8 @@ class ServiceRequestService implements
         final var violations = new ArrayList<FieldViolation>();
         validateDescription(description, violations);
         validateClientText(client, violations);
-        if (!dictionaryPort.isCategoryActive(command.categoryId())) {
+        final var category = dictionaryPort.findActiveCategory(command.categoryId());
+        if (category.isEmpty()) {
             violations.add(new FieldViolation("categoryId", CATEGORY_INVALID));
         }
         if (!dictionaryPort.districtExists(client.districtId())) {
@@ -88,7 +90,11 @@ class ServiceRequestService implements
             throw new ServiceRequestValidationException(violations);
         }
 
-        final var id = repository.create(new NewServiceRequest(
+        final var estimate = priceEstimator.estimate(category.orElseThrow().name(), description).orElse(null);
+
+        now = clock.instant();
+
+        return repository.create(new NewServiceRequest(
                 toClient(client),
                 command.categoryId(),
                 description,
@@ -97,11 +103,10 @@ class ServiceRequestService implements
                 notifyTarget,
                 RequestChannel.WEB_FORM,
                 accountId,
-                now.plus(properties.expiry())
+                now.plus(properties.expiry()),
+                estimate,
+                estimate != null ? now : null
         ));
-
-        return repository.findById(id)
-                .orElseThrow(() -> new IllegalStateException("Nie odnaleziono zapisanego zgłoszenia o id " + id));
     }
 
     @Override

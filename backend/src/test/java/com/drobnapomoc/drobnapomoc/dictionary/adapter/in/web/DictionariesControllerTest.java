@@ -10,7 +10,7 @@ import com.drobnapomoc.drobnapomoc.dictionary.application.port.in.ListCitiesUseC
 import com.drobnapomoc.drobnapomoc.dictionary.application.port.in.ListServiceCategoriesUseCase;
 import com.drobnapomoc.drobnapomoc.dictionary.domain.City;
 import com.drobnapomoc.drobnapomoc.dictionary.domain.District;
-import com.drobnapomoc.drobnapomoc.dictionary.domain.ServiceCategory;
+import com.drobnapomoc.drobnapomoc.shared.domain.ServiceCategory;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
