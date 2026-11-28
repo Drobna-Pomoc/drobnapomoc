@@ -1,4 +1,6 @@
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
+import net.ltgt.gradle.errorprone.errorprone
+import net.ltgt.gradle.nullaway.nullaway
 
 plugins {
 	java
@@ -6,6 +8,8 @@ plugins {
 	id("org.springframework.boot") version "4.1.1"
 	id("io.spring.dependency-management") version "1.1.7"
 	id("org.openapi.generator") version "7.26.0"
+	id("net.ltgt.errorprone") version "5.1.0"
+	id("net.ltgt.nullaway") version "3.0.0"
 }
 
 group = "com.drobnapomoc"
@@ -17,9 +21,30 @@ java {
 	}
 }
 
+nullaway {
+	onlyNullMarked = true
+	jspecifyMode = true
+}
+
+tasks.withType<JavaCompile>().configureEach {
+	options.errorprone {
+		disableAllChecks = true
+		excludedPaths = ".*/build/generated/.*"
+		nullaway {
+			error()
+			treatGeneratedAsUnannotated = true
+			customContractAnnotations.add("org.springframework.lang.Contract")
+		}
+	}
+}
+
 repositories {
 	mavenCentral()
 }
+
+val mapstructVersion = "1.6.3"
+val lombokMapstructBindingVersion = "0.2.0"
+val archunitVersion = "1.5.1"
 
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter")
@@ -28,14 +53,28 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-jdbc")
 	implementation("org.springframework.boot:spring-boot-starter-flyway")
+	implementation("org.mapstruct:mapstruct:$mapstructVersion")
+	implementation("org.jspecify:jspecify")
+	compileOnly("org.projectlombok:lombok")
+	annotationProcessor("org.projectlombok:lombok")
+	annotationProcessor("org.mapstruct:mapstruct-processor:$mapstructVersion")
+	annotationProcessor("org.projectlombok:lombok-mapstruct-binding:$lombokMapstructBindingVersion")
+	testCompileOnly("org.projectlombok:lombok")
+	testAnnotationProcessor("org.projectlombok:lombok")
+	developmentOnly("org.springframework.boot:spring-boot-docker-compose")
 	runtimeOnly("org.flywaydb:flyway-database-postgresql")
 	runtimeOnly("org.postgresql:postgresql")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+	testImplementation("org.springframework.boot:spring-boot-starter-jdbc-test")
+	testImplementation("org.springframework.boot:spring-boot-starter-security-test")
 	testImplementation("org.springframework.boot:spring-boot-testcontainers")
 	testImplementation("org.testcontainers:testcontainers-junit-jupiter")
 	testImplementation("org.testcontainers:testcontainers-postgresql")
+	testImplementation("com.tngtech.archunit:archunit-junit6:$archunitVersion")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+	errorprone("com.google.errorprone:error_prone_core:2.42.0")
+	errorprone("com.uber.nullaway:nullaway:0.13.2")
 }
 
 val apiDir = layout.projectDirectory.dir("../api")
@@ -57,11 +96,10 @@ apiSpecs.forEach { spec ->
 		apiPackage.set("com.drobnapomoc.drobnapomoc.api")
 		modelPackage.set("com.drobnapomoc.drobnapomoc.api.model")
 		modelNameSuffix.set("Rest")
-		globalProperties.set(mapOf("apis" to "", "models" to "", "supportingFiles" to "none"))
+		globalProperties.set(mapOf("apis" to "", "models" to "", "supportingFiles" to "ApiUtil.java"))
 		configOptions.set(
 			mapOf(
-				"interfaceOnly" to "true",
-				"skipDefaultInterface" to "true",
+				"delegatePattern" to "true",
 				"useSpringBoot4" to "true",
 				"useJackson3" to "true",
 				"useTags" to "true",
@@ -98,16 +136,49 @@ tasks.test {
 	finalizedBy(tasks.jacocoTestReport)
 }
 
+val jacocoExcludes = listOf(
+	"**/com/drobnapomoc/drobnapomoc/api/**",
+	"**/*Application*",
+	"**/*MapperImpl*"
+)
+
 tasks.jacocoTestReport {
 	dependsOn(tasks.test)
 	reports {
 		xml.required = true
 		html.required = true
 	}
-	// The *Application class just starts Spring, so leave it out of coverage
+	// The *Application class, OpenAPI-generated classes and MapStruct-generated *MapperImpl classes are excluded from coverage
 	classDirectories.setFrom(
 		files(classDirectories.files.map {
-			fileTree(it) { exclude("**/*Application.class") }
+			fileTree(it) { exclude(jacocoExcludes) }
 		})
 	)
+}
+
+tasks.jacocoTestCoverageVerification {
+	dependsOn(tasks.test)
+	classDirectories.setFrom(
+		files(classDirectories.files.map {
+			fileTree(it) { exclude(jacocoExcludes) }
+		})
+	)
+	violationRules {
+		rule {
+			limit {
+				counter = "LINE"
+				value = "COVEREDRATIO"
+				minimum = "0.80".toBigDecimal()
+			}
+			limit {
+				counter = "BRANCH"
+				value = "COVEREDRATIO"
+				minimum = "0.80".toBigDecimal()
+			}
+		}
+	}
+}
+
+tasks.check {
+	dependsOn(tasks.jacocoTestCoverageVerification)
 }

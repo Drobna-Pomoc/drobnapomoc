@@ -347,8 +347,9 @@ components:
           example: Nowak
         phone:
           type: string
-          pattern: '^\+?[0-9]{9,15}$'
-          maxLength: 16
+          description: Polish phone number, 9 digits with or without the `+48` prefix.
+          pattern: '^(\+48)?[0-9]{9}$'
+          maxLength: 12
           example: '+48600123456'
         street:
           type: string
@@ -398,7 +399,8 @@ components:
           example: Nowak
         phone:
           type: string
-          maxLength: 16
+          description: Polish phone number with the `+48` prefix.
+          maxLength: 12
           example: '+48600123456'
         street:
           type: string
