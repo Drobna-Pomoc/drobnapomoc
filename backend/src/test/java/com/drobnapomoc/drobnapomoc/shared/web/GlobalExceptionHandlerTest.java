@@ -7,7 +7,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import org.assertj.core.api.SoftAssertions;
-import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.Test;
@@ -52,14 +51,11 @@ class GlobalExceptionHandlerTest {
     private static final String ILLEGAL_ARGUMENT_PATH = "/test/illegal-argument";
     private static final String UNAUTHENTICATED_MESSAGE = "Wymagane zalogowanie.";
 
-    @InjectSoftAssertions
-    private SoftAssertions softly;
-
     @Autowired
     private MockMvcTester mockMvc;
 
     @Test
-    void shouldHandleAuthenticationException() {
+    void shouldHandleAuthenticationException(final SoftAssertions softly) {
         // when
         final var result = mockMvc.get().uri("/test/authentication-exception").exchange();
 
@@ -68,12 +64,13 @@ class GlobalExceptionHandlerTest {
                 result,
                 HttpStatus.UNAUTHORIZED,
                 "UNAUTHENTICATED",
-                UNAUTHENTICATED_MESSAGE
+                UNAUTHENTICATED_MESSAGE,
+                softly
         );
     }
 
     @Test
-    void shouldHandleCsrfException() {
+    void shouldHandleCsrfException(final SoftAssertions softly) {
         // when
         final var result = mockMvc.get().uri("/test/csrf").exchange();
 
@@ -82,12 +79,13 @@ class GlobalExceptionHandlerTest {
                 result,
                 HttpStatus.FORBIDDEN,
                 "CSRF_INVALID",
-                "Brakujący lub niepoprawny token CSRF."
+                "Brakujący lub niepoprawny token CSRF.",
+                softly
         );
     }
 
     @Test
-    void shouldHandleAccessDeniedException() {
+    void shouldHandleAccessDeniedException(final SoftAssertions softly) {
         // when
         final var result = mockMvc.get().uri("/test/access-denied").exchange();
 
@@ -96,12 +94,13 @@ class GlobalExceptionHandlerTest {
                 result,
                 HttpStatus.FORBIDDEN,
                 "ACCESS_DENIED",
-                "Brak uprawnień do tej operacji."
+                "Brak uprawnień do tej operacji.",
+                softly
         );
     }
 
     @Test
-    void shouldHandleBeanValidationFailure() {
+    void shouldHandleBeanValidationFailure(final SoftAssertions softly) {
         // given
         final var invalidPayload = """
                 {
@@ -132,7 +131,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void shouldFallbackToDefaultFieldErrorMessageWhenNull() {
+    void shouldFallbackToDefaultFieldErrorMessageWhenNull(final SoftAssertions softly) {
         // given
         final var payload = """
                 {
@@ -161,7 +160,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void shouldHandleHttpMessageNotReadable() {
+    void shouldHandleHttpMessageNotReadable(final SoftAssertions softly) {
         // given
         final var malformedJson = "{ \"email\": ";
 
@@ -177,12 +176,13 @@ class GlobalExceptionHandlerTest {
                 result,
                 HttpStatus.BAD_REQUEST,
                 MALFORMED_REQUEST_CODE,
-                "Treść żądania nie jest poprawnym JSON-em."
+                "Treść żądania nie jest poprawnym JSON-em.",
+                softly
         );
     }
 
     @Test
-    void shouldHandleIllegalArgumentException() {
+    void shouldHandleIllegalArgumentException(final SoftAssertions softly) {
         // when
         final var result = mockMvc.get()
                 .uri(ILLEGAL_ARGUMENT_PATH)
@@ -194,12 +194,13 @@ class GlobalExceptionHandlerTest {
                 result,
                 HttpStatus.BAD_REQUEST,
                 MALFORMED_REQUEST_CODE,
-                "Email cannot be blank"
+                "Email cannot be blank",
+                softly
         );
     }
 
     @Test
-    void shouldHandleIllegalArgumentExceptionWithNullMessage() {
+    void shouldHandleIllegalArgumentExceptionWithNullMessage(final SoftAssertions softly) {
         // when
         final var result = mockMvc.get()
                 .uri(ILLEGAL_ARGUMENT_PATH)
@@ -211,15 +212,17 @@ class GlobalExceptionHandlerTest {
                 result,
                 HttpStatus.BAD_REQUEST,
                 MALFORMED_REQUEST_CODE,
-                "Niepoprawne parametry żądania."
+                "Niepoprawne parametry żądania.",
+                softly
         );
     }
 
-    private void assertErrorResponse(
+    private static void assertErrorResponse(
             final MvcTestResult result,
             final HttpStatus expectedStatus,
             final String expectedCode,
-            final String expectedMessage
+            final String expectedMessage,
+            final SoftAssertions softly
     ) {
         assertThat(result)
                 .hasStatus(expectedStatus)
