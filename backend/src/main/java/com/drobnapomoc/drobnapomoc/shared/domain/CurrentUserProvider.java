@@ -4,18 +4,16 @@ import com.drobnapomoc.drobnapomoc.shared.domain.exception.UnauthenticatedExcept
 
 import java.util.Optional;
 
-/**
- * Gives application services access to the logged-in user of the current request
- */
+
 public interface CurrentUserProvider {
 
     /**
-     * The logged-in user, or empty for an anonymous request. For use cases that work with and without a session.
+     * The logged-in user, or empty for an anonymous request.
      */
     Optional<CurrentUser> current();
 
     /**
-     * The logged-in user, for use cases that only make sense with a session.
+     * The logged-in user.
      *
      * @throws UnauthenticatedException when the request is anonymous (mapped to {@code 401})
      */

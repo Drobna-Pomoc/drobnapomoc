@@ -8,7 +8,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import org.assertj.core.api.SoftAssertions;
-import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.Test;
@@ -267,6 +266,11 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/test/authentication-exception")
         void authenticationException() {
             throw new BadCredentialsException(UNAUTHENTICATED_MESSAGE);
+        }
+
+        @GetMapping("/test/unauthenticated")
+        void unauthenticated() {
+            throw new UnauthenticatedException();
         }
 
         @GetMapping("/test/csrf")

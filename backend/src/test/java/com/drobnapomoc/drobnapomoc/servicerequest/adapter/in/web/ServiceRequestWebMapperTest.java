@@ -16,6 +16,7 @@ import com.drobnapomoc.drobnapomoc.servicerequest.domain.ServiceRequest;
 import com.drobnapomoc.drobnapomoc.servicerequest.domain.ServiceRequestClient;
 import com.drobnapomoc.drobnapomoc.servicerequest.domain.ServiceRequestListing;
 import com.drobnapomoc.drobnapomoc.servicerequest.domain.ServiceRequestStatus;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -174,7 +175,7 @@ class ServiceRequestWebMapperTest {
         return new ServiceRequestClientInputRest("Janina", "Nowak", "600123456", "ul. Lipowa", "12A", "20-001", 7L);
     }
 
-    private static ServiceRequestClient client(final String apartmentNumber) {
+    private static ServiceRequestClient client(final @Nullable String apartmentNumber) {
         return new ServiceRequestClient("Janina", "Nowak", "+48600123456", "ul. Lipowa", "12A", apartmentNumber, "20-001", 7L);
     }
 }

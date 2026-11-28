@@ -26,8 +26,8 @@ class ServiceRequestListingRowMapper implements RowMapper<ServiceRequestListing>
                 rs.getLong("district_id"),
                 rs.getObject("estimate_min_minor", Long.class),
                 rs.getObject("estimate_max_minor", Long.class),
-                toInstant(rs.getObject("expires_at", OffsetDateTime.class)),
-                toInstant(rs.getObject("created_at", OffsetDateTime.class))
+                rs.getObject("expires_at", OffsetDateTime.class).toInstant(),
+                rs.getObject("created_at", OffsetDateTime.class).toInstant()
         );
     }
 }

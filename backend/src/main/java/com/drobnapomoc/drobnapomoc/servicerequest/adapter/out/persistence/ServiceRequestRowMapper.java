@@ -32,11 +32,11 @@ class ServiceRequestRowMapper implements RowMapper<ServiceRequest> {
                 rs.getObject("estimate_min_minor", Long.class),
                 rs.getObject("estimate_max_minor", Long.class),
                 toInstant(rs.getObject("estimated_at", OffsetDateTime.class)),
-                toInstant(rs.getObject("expires_at", OffsetDateTime.class)),
+                rs.getObject("expires_at", OffsetDateTime.class).toInstant(),
                 rs.getObject("created_by", Long.class),
                 rs.getString("cancel_reason"),
-                toInstant(rs.getObject("created_at", OffsetDateTime.class)),
-                toInstant(rs.getObject("updated_at", OffsetDateTime.class))
+                rs.getObject("created_at", OffsetDateTime.class).toInstant(),
+                rs.getObject("updated_at", OffsetDateTime.class).toInstant()
         );
     }
 
