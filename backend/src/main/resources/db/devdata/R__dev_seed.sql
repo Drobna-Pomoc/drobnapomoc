@@ -56,3 +56,39 @@ INSERT INTO account_role (account_id, role) VALUES
     ((SELECT id FROM account WHERE email = 'admin@drobnapomoc.dev'), 'CONSULTANT'),
     ((SELECT id FROM account WHERE email = 'admin@drobnapomoc.dev'), 'ADMIN')
 ON CONFLICT DO NOTHING;
+
+-- contractor_profile
+INSERT INTO contractor_profile (account_id, verification_status, bio, verified_by, verified_at) VALUES
+    (
+        (SELECT id FROM account WHERE email = 'contractor@drobnapomoc.dev'),
+        'APPROVED',
+        'Doświadczony hydraulik i elektryk, szybkie terminy.',
+        (SELECT id FROM account WHERE email = 'admin@drobnapomoc.dev'),
+        now()
+    ),
+    (
+        (SELECT id FROM account WHERE email = 'admin@drobnapomoc.dev'),
+        'APPROVED',
+        'Konto testowe administratora z rolą wykonawcy.',
+        (SELECT id FROM account WHERE email = 'admin@drobnapomoc.dev'),
+        now()
+    )
+ON CONFLICT DO NOTHING;
+
+-- contractor_category
+INSERT INTO contractor_category (contractor_id, category_id) VALUES
+    ((SELECT id FROM account WHERE email = 'contractor@drobnapomoc.dev'), (SELECT id FROM service_category WHERE name = 'Hydraulik')),
+    ((SELECT id FROM account WHERE email = 'contractor@drobnapomoc.dev'), (SELECT id FROM service_category WHERE name = 'Elektryk')),
+    ((SELECT id FROM account WHERE email = 'admin@drobnapomoc.dev'), (SELECT id FROM service_category WHERE name = 'Hydraulik')),
+    ((SELECT id FROM account WHERE email = 'admin@drobnapomoc.dev'), (SELECT id FROM service_category WHERE name = 'Elektryk'))
+ON CONFLICT DO NOTHING;
+
+-- contractor_district
+INSERT INTO contractor_district (contractor_id, district_id) VALUES
+    ((SELECT id FROM account WHERE email = 'contractor@drobnapomoc.dev'), (SELECT id FROM district WHERE name = 'Mokotów')),
+    ((SELECT id FROM account WHERE email = 'contractor@drobnapomoc.dev'), (SELECT id FROM district WHERE name = 'Śródmieście')),
+    ((SELECT id FROM account WHERE email = 'contractor@drobnapomoc.dev'), (SELECT id FROM district WHERE name = 'Wola')),
+    ((SELECT id FROM account WHERE email = 'admin@drobnapomoc.dev'), (SELECT id FROM district WHERE name = 'Mokotów')),
+    ((SELECT id FROM account WHERE email = 'admin@drobnapomoc.dev'), (SELECT id FROM district WHERE name = 'Śródmieście')),
+    ((SELECT id FROM account WHERE email = 'admin@drobnapomoc.dev'), (SELECT id FROM district WHERE name = 'Wola'))
+ON CONFLICT DO NOTHING;

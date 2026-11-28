@@ -1,0 +1,548 @@
+openapi: 3.0.3
+
+info:
+  title: Offers
+  version: 0.1.0
+  description: |
+    Offers submitted by approved contractors for open service requests: submitting and
+    withdrawing offers by contractors, reviewing and deciding on offers by the request's
+    creator, and monitoring or deciding on offers by consultants and admins.
+
+    Offers are immutable. Changing price or schedule requires withdrawing the active
+    `SUBMITTED` offer and submitting a new one.
+
+servers:
+  - url: http://localhost:8081/v1
+    description: Local
+
+security:
+  - sessionAuth: []
+
+tags:
+  - name: ContractorOffers
+    description: Submitting, listing and withdrawing offers by approved contractors.
+  - name: Offers
+    description: Viewing, accepting and rejecting offers on the creator's own service requests.
+  - name: AdminOffers
+    description: Viewing, accepting and rejecting offers across all service requests, for consultants and admins.
+
+paths:
+  /service-requests/{serviceRequestId}/offers:
+    parameters:
+      - $ref: '#/components/parameters/ServiceRequestIdPathParam'
+    post:
+      tags: [ContractorOffers]
+      operationId: submitOffer
+      summary: Submit an offer for an open service request
+      description: |
+        Creates an immutable `SUBMITTED` offer for an open service request (`NEW` or `PRICED`,
+        not expired). Only for accounts with the `CONTRACTOR` role and an `APPROVED` contractor
+        profile.
+
+        A contractor can hold at most one active (`SUBMITTED`) offer per service request.
+        To change price or schedule, withdraw the active offer and submit a new one.
+      requestBody:
+        $ref: '#/components/requestBodies/CreateOfferRequestBody'
+      responses:
+        '201':
+          $ref: '#/components/responses/OfferCreatedResponse'
+        '400':
+          $ref: 'common.yaml#/components/responses/BadRequestError'
+        '401':
+          $ref: 'common.yaml#/components/responses/UnauthorizedError'
+        '403':
+          $ref: 'common.yaml#/components/responses/ForbiddenError'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/OfferConflictError'
+        '422':
+          $ref: '#/components/responses/OfferValidationError'
+
+  /offers/mine:
+    get:
+      tags: [ContractorOffers]
+      operationId: listMyOffers
+      summary: List my submitted offers
+      description: |
+        Returns offers submitted by the current contractor account, newest first.
+        Optionally filtered by `status`. Only for accounts with the `CONTRACTOR` role.
+      parameters:
+        - $ref: '#/components/parameters/OfferStatusQueryParam'
+      responses:
+        '200':
+          $ref: '#/components/responses/OfferListResponse'
+        '401':
+          $ref: 'common.yaml#/components/responses/UnauthorizedError'
+        '403':
+          $ref: 'common.yaml#/components/responses/ForbiddenError'
+
+  /offers/mine/{offerId}:
+    parameters:
+      - $ref: '#/components/parameters/OfferIdPathParam'
+    get:
+      tags: [ContractorOffers]
+      operationId: getMyOffer
+      summary: Get my offer
+      description: |
+        Returns an offer submitted by the current contractor account. An offer submitted
+        by another contractor gives `404`. Only for accounts with the `CONTRACTOR` role.
+      responses:
+        '200':
+          $ref: '#/components/responses/OfferResponse'
+        '401':
+          $ref: 'common.yaml#/components/responses/UnauthorizedError'
+        '403':
+          $ref: 'common.yaml#/components/responses/ForbiddenError'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFoundError'
+
+  /offers/mine/{offerId}/withdraw:
+    parameters:
+      - $ref: '#/components/parameters/OfferIdPathParam'
+    post:
+      tags: [ContractorOffers]
+      operationId: withdrawOffer
+      summary: Withdraw my offer
+      description: |
+        Withdraws a `SUBMITTED` offer belonging to the current contractor account, setting
+        its status to `WITHDRAWN`. After withdrawing, the contractor may submit a new offer
+        for the same service request while it remains open. Only for accounts with the
+        `CONTRACTOR` role.
+      responses:
+        '200':
+          $ref: '#/components/responses/OfferResponse'
+        '401':
+          $ref: 'common.yaml#/components/responses/UnauthorizedError'
+        '403':
+          $ref: 'common.yaml#/components/responses/ForbiddenError'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/OfferConflictError'
+
+  /service-requests/mine/{serviceRequestId}/offers:
+    parameters:
+      - $ref: '#/components/parameters/ServiceRequestIdPathParam'
+    get:
+      tags: [Offers]
+      operationId: listOffersForMyServiceRequest
+      summary: List offers for my service request
+      description: |
+        Returns offers submitted for a service request created by the current account,
+        newest first. A request created by someone else gives `404`.
+      responses:
+        '200':
+          $ref: '#/components/responses/OfferListResponse'
+        '401':
+          $ref: 'common.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFoundError'
+
+  /service-requests/mine/{serviceRequestId}/offers/{offerId}:
+    parameters:
+      - $ref: '#/components/parameters/ServiceRequestIdPathParam'
+      - $ref: '#/components/parameters/OfferIdPathParam'
+    get:
+      tags: [Offers]
+      operationId: getOfferForMyServiceRequest
+      summary: Get an offer for my service request
+      description: |
+        Returns a single offer for a service request created by the current account.
+        A request created by someone else or an offer belonging to another request gives `404`.
+      responses:
+        '200':
+          $ref: '#/components/responses/OfferResponse'
+        '401':
+          $ref: 'common.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFoundError'
+
+  /service-requests/mine/{serviceRequestId}/offers/{offerId}/accept:
+    parameters:
+      - $ref: '#/components/parameters/ServiceRequestIdPathParam'
+      - $ref: '#/components/parameters/OfferIdPathParam'
+    post:
+      tags: [Offers]
+      operationId: acceptOffer
+      summary: Accept an offer for my service request
+      description: |
+        Accepts a `SUBMITTED` offer for an open service request created by the current account
+        (`decidedVia = APP`). All other `SUBMITTED` offers on the same service request are
+        automatically marked `REJECTED` and the service request transitions to `ACCEPTED`.
+      responses:
+        '200':
+          $ref: '#/components/responses/OfferResponse'
+        '401':
+          $ref: 'common.yaml#/components/responses/UnauthorizedError'
+        '403':
+          $ref: 'common.yaml#/components/responses/ForbiddenError'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/OfferConflictError'
+
+  /service-requests/mine/{serviceRequestId}/offers/{offerId}/reject:
+    parameters:
+      - $ref: '#/components/parameters/ServiceRequestIdPathParam'
+      - $ref: '#/components/parameters/OfferIdPathParam'
+    post:
+      tags: [Offers]
+      operationId: rejectOffer
+      summary: Reject an offer for my service request
+      description: |
+        Rejects a `SUBMITTED` offer for a service request created by the current account
+        (`decidedVia = APP`). Rejecting an offer leaves the service request open for other
+        offers.
+      responses:
+        '200':
+          $ref: '#/components/responses/OfferResponse'
+        '401':
+          $ref: 'common.yaml#/components/responses/UnauthorizedError'
+        '403':
+          $ref: 'common.yaml#/components/responses/ForbiddenError'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/OfferConflictError'
+
+  /admin/service-requests/{serviceRequestId}/offers:
+    parameters:
+      - $ref: '#/components/parameters/ServiceRequestIdPathParam'
+    get:
+      tags: [AdminOffers]
+      operationId: listOffersForServiceRequest
+      summary: List all offers for a service request
+      description: |
+        Returns all offers for any service request, newest first. Only for accounts with
+        the `CONSULTANT` or `ADMIN` role.
+      responses:
+        '200':
+          $ref: '#/components/responses/OfferListResponse'
+        '401':
+          $ref: 'common.yaml#/components/responses/UnauthorizedError'
+        '403':
+          $ref: 'common.yaml#/components/responses/ForbiddenError'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFoundError'
+
+  /admin/offers/{offerId}:
+    parameters:
+      - $ref: '#/components/parameters/OfferIdPathParam'
+    get:
+      tags: [AdminOffers]
+      operationId: getOffer
+      summary: Get any offer
+      description: |
+        Returns any offer by id. Only for accounts with the `CONSULTANT` or `ADMIN` role.
+      responses:
+        '200':
+          $ref: '#/components/responses/OfferResponse'
+        '401':
+          $ref: 'common.yaml#/components/responses/UnauthorizedError'
+        '403':
+          $ref: 'common.yaml#/components/responses/ForbiddenError'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFoundError'
+
+  /admin/service-requests/{serviceRequestId}/offers/{offerId}/accept:
+    parameters:
+      - $ref: '#/components/parameters/ServiceRequestIdPathParam'
+      - $ref: '#/components/parameters/OfferIdPathParam'
+    post:
+      tags: [AdminOffers]
+      operationId: adminAcceptOffer
+      summary: Accept an offer on behalf of the client
+      description: |
+        Accepts a `SUBMITTED` offer for an open service request on behalf of the client
+        (`decidedVia = CONSULTANT`). All other `SUBMITTED` offers on the same service request
+        are automatically marked `REJECTED` and the service request transitions to `ACCEPTED`.
+        Only for accounts with the `CONSULTANT` or `ADMIN` role.
+      responses:
+        '200':
+          $ref: '#/components/responses/OfferResponse'
+        '401':
+          $ref: 'common.yaml#/components/responses/UnauthorizedError'
+        '403':
+          $ref: 'common.yaml#/components/responses/ForbiddenError'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/OfferConflictError'
+
+  /admin/service-requests/{serviceRequestId}/offers/{offerId}/reject:
+    parameters:
+      - $ref: '#/components/parameters/ServiceRequestIdPathParam'
+      - $ref: '#/components/parameters/OfferIdPathParam'
+    post:
+      tags: [AdminOffers]
+      operationId: adminRejectOffer
+      summary: Reject an offer on behalf of the client
+      description: |
+        Rejects a `SUBMITTED` offer on behalf of the client (`decidedVia = CONSULTANT`).
+        The service request remains open for other offers. Only for accounts with the
+        `CONSULTANT` or `ADMIN` role.
+      responses:
+        '200':
+          $ref: '#/components/responses/OfferResponse'
+        '401':
+          $ref: 'common.yaml#/components/responses/UnauthorizedError'
+        '403':
+          $ref: 'common.yaml#/components/responses/ForbiddenError'
+        '404':
+          $ref: 'common.yaml#/components/responses/NotFoundError'
+        '409':
+          $ref: '#/components/responses/OfferConflictError'
+
+components:
+  securitySchemes:
+    sessionAuth:
+      $ref: 'common.yaml#/components/securitySchemes/sessionAuth'
+
+  parameters:
+    ServiceRequestIdPathParam:
+      name: serviceRequestId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+        example: 1024
+
+    OfferIdPathParam:
+      name: offerId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+        example: 512
+
+    OfferStatusQueryParam:
+      name: status
+      in: query
+      required: false
+      description: Optional filter by offer status.
+      schema:
+        $ref: '#/components/schemas/OfferStatus'
+
+  requestBodies:
+    CreateOfferRequestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateOfferInput'
+
+  responses:
+    OfferCreatedResponse:
+      description: Offer submitted.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Offer'
+
+    OfferResponse:
+      description: The offer.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Offer'
+
+    OfferListResponse:
+      description: Offers, newest first.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Offer'
+
+    OfferValidationError:
+      description: |
+        Validation error (`VALIDATION_FAILED`). Covers format errors, non-positive
+        `priceMinor` or `estimatedDurationMinutes`, and `proposedStart` in the past.
+      content:
+        application/json:
+          schema:
+            $ref: 'common.yaml#/components/schemas/ErrorResponse'
+          examples:
+            proposedStartInPast:
+              value:
+                code: VALIDATION_FAILED
+                message: Dane nie przeszły walidacji.
+                errors:
+                  - field: proposedStart
+                    message: Proponowany termin nie może być w przeszłości.
+            nonPositivePrice:
+              value:
+                code: VALIDATION_FAILED
+                message: Dane nie przeszły walidacji.
+                errors:
+                  - field: priceMinor
+                    message: Cena musi być większa od zera.
+
+    OfferConflictError:
+      description: |
+        State conflict disallowing the operation. Covers a non-open or expired service
+        request (`REQUEST_NOT_OPEN`), a duplicate active offer from the same contractor
+        (`ACTIVE_OFFER_EXISTS`), an offer that is no longer `SUBMITTED` (`OFFER_NOT_SUBMITTED`),
+        or an unapproved contractor profile (`CONTRACTOR_NOT_APPROVED`).
+      content:
+        application/json:
+          schema:
+            $ref: 'common.yaml#/components/schemas/ErrorResponse'
+          examples:
+            requestNotOpen:
+              value:
+                code: REQUEST_NOT_OPEN
+                message: Zgłoszenie nie przyjmuje już nowych ofert.
+            activeOfferExists:
+              value:
+                code: ACTIVE_OFFER_EXISTS
+                message: Masz już aktywną ofertę dla tego zgłoszenia. Wycofaj ją, aby złożyć nową.
+            offerNotSubmitted:
+              value:
+                code: OFFER_NOT_SUBMITTED
+                message: Operacja jest możliwa tylko dla oferty w statusie SUBMITTED.
+            contractorNotApproved:
+              value:
+                code: CONTRACTOR_NOT_APPROVED
+                message: Konto wykonawcy nie zostało jeszcze zatwierdzone.
+
+  schemas:
+    OfferStatus:
+      type: string
+      description: Lifecycle status of an offer.
+      enum:
+        - SUBMITTED
+        - ACCEPTED
+        - REJECTED
+        - WITHDRAWN
+        - CANCELLED
+      example: SUBMITTED
+
+    DecisionChannel:
+      type: string
+      description: Channel through which the decision on an offer was recorded.
+      enum:
+        - LINK
+        - APP
+        - CONSULTANT
+      example: APP
+
+    CreateOfferInput:
+      type: object
+      description: Data submitted by a contractor when making an offer.
+      required:
+        - priceMinor
+        - proposedStart
+      properties:
+        priceMinor:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Proposed price in grosze (must be greater than 0).
+          example: 12000
+        proposedStart:
+          type: string
+          format: date-time
+          description: Proposed visit start timestamp, must not be in the past.
+          example: '2026-12-01T10:00:00+01:00'
+        estimatedDurationMinutes:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 1440
+          description: Optional estimated work duration in minutes.
+          example: 60
+        message:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          description: Optional note from the contractor to the client.
+          example: Mogę przyjechać punktualnie o 10:00, mam ze sobą zapasowe uszczelki.
+
+    OfferContractor:
+      type: object
+      description: Basic contractor identity shown on an offer.
+      required:
+        - id
+        - firstName
+        - lastName
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 42
+        firstName:
+          type: string
+          maxLength: 100
+          example: Czesław
+        lastName:
+          type: string
+          maxLength: 100
+          example: Fachowiec
+
+    Offer:
+      type: object
+      description: |
+        Immutable offer submitted by a contractor for a service request.
+        Fields without a value are omitted: `estimatedDurationMinutes`, `message`,
+        `decidedAt` and `decidedVia`.
+      required:
+        - id
+        - serviceRequestId
+        - contractor
+        - priceMinor
+        - proposedStart
+        - status
+        - submittedAt
+      properties:
+        id:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 512
+        serviceRequestId:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 1024
+        contractor:
+          $ref: '#/components/schemas/OfferContractor'
+        priceMinor:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Proposed price in grosze.
+          example: 12000
+        proposedStart:
+          type: string
+          format: date-time
+          example: '2026-12-01T10:00:00+01:00'
+        estimatedDurationMinutes:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 1440
+          example: 60
+        message:
+          type: string
+          maxLength: 1000
+          example: Mogę przyjechać punktualnie o 10:00, mam ze sobą zapasowe uszczelki.
+        status:
+          $ref: '#/components/schemas/OfferStatus'
+        submittedAt:
+          type: string
+          format: date-time
+          example: '2026-11-28T16:30:00+01:00'
+        decidedAt:
+          type: string
+          format: date-time
+          example: '2026-11-28T17:15:00+01:00'
+        decidedVia:
+          $ref: '#/components/schemas/DecisionChannel'
