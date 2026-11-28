@@ -21,8 +21,10 @@ describe('LoginForm', () => {
     vi.clearAllMocks();
     vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
       user: null,
+      isLoading: false,
       login: mockLogin,
       logout: vi.fn(),
+      register: vi.fn()
     });
   });
 

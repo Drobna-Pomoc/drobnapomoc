@@ -8,8 +8,10 @@ describe('Header', () => {
   it('renders header with topbar and navbar', () => {
     vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
       user: null,
+      isLoading: false,
       login: vi.fn(),
       logout: vi.fn(),
+      register: vi.fn()
     });
 
     render(
