@@ -1,8 +1,5 @@
 package com.drobnapomoc.drobnapomoc.servicerequest.domain;
 
-/**
- * Suggested price range of a service request, in grosze.
- */
 public record PriceEstimate(long minMinor, long maxMinor) {
 
     public PriceEstimate {

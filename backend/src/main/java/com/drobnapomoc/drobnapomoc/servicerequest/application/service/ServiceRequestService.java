@@ -64,12 +64,9 @@ class ServiceRequestService implements
     private final ServiceRequestProperties properties;
     private final Clock clock;
 
-    /**
-     * Validates, asks for a price estimate outside any transaction (the model may take seconds), then stores the request.
-     */
     @Override
     public ServiceRequest create(final CreateServiceRequestCommand command) {
-        final var now = clock.instant();
+        var now = clock.instant();
         final var accountId = currentUserProvider.current().map(CurrentUser::id).orElse(null);
         final var notifyTarget = Objects.requireNonNullElse(command.notifyTarget(), NotifyTarget.CLIENT);
         final var description = command.description().trim();
@@ -94,6 +91,8 @@ class ServiceRequestService implements
         }
 
         final var estimate = priceEstimator.estimate(category.orElseThrow().name(), description).orElse(null);
+
+        now = clock.instant();
 
         return repository.create(new NewServiceRequest(
                 toClient(client),

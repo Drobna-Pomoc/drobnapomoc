@@ -33,7 +33,6 @@ class OllamaPriceEstimator implements PriceEstimatorPort {
     private static final int MIN_PLN = 1;
     private static final int MAX_PLN = 50_000;
     private static final long GROSZE_PER_PLN = 100L;
-    private static final Executor VIRTUAL_THREADS = task -> Thread.ofVirtual().start(task);
 
     private final ChatClient chatClient;
     private final Duration timeout;
@@ -45,15 +44,15 @@ class OllamaPriceEstimator implements PriceEstimatorPort {
 
     @Override
     public Optional<PriceEstimate> estimate(final String categoryName, final String description) {
-        final var call = CompletableFuture.supplyAsync(() -> ask(categoryName, description), VIRTUAL_THREADS);
+        final var call = CompletableFuture.supplyAsync(() -> ask(categoryName, description), task -> Thread.ofVirtual().start(task));
         try {
             return toEstimate(call.get(timeout.toMillis(), TimeUnit.MILLISECONDS));
-        } catch (final TimeoutException e) {
+        } catch (final TimeoutException _) {
             call.cancel(true);
             log.warn("No price estimate: the model did not answer within {}", timeout);
         } catch (final ExecutionException e) {
             log.warn("No price estimate: the model call failed: {}", String.valueOf(e.getCause()));
-        } catch (final InterruptedException e) {
+        } catch (final InterruptedException _) {
             Thread.currentThread().interrupt();
             log.warn("No price estimate: interrupted while waiting for the model");
         }

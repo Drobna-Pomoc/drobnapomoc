@@ -10,9 +10,6 @@ import java.util.Optional;
 
 public interface ServiceRequestRepository {
 
-    /**
-     * Stores the client record and the request in one transaction and returns the stored request.
-     */
     ServiceRequest create(NewServiceRequest request);
 
     Optional<ServiceRequest> findById(long id);
