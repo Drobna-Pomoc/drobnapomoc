@@ -7,7 +7,6 @@ import com.drobnapomoc.drobnapomoc.api.ContractorServiceRequestsApi;
 import com.drobnapomoc.drobnapomoc.api.ContractorServiceRequestsApiController;
 import com.drobnapomoc.drobnapomoc.api.ServiceRequestsApi;
 import com.drobnapomoc.drobnapomoc.api.ServiceRequestsApiController;
-import com.drobnapomoc.drobnapomoc.api.model.ErrorResponseRest;
 import com.drobnapomoc.drobnapomoc.api.model.FieldErrorRest;
 import com.drobnapomoc.drobnapomoc.api.model.ServiceRequestListingRest;
 import com.drobnapomoc.drobnapomoc.api.model.ServiceRequestRest;
@@ -112,8 +111,6 @@ class ServiceRequestControllerTest extends BaseControllerTest {
     @MockitoBean
     private GetServiceRequestUseCase getUseCase;
 
-    // createServiceRequest
-
     @Test
     void testCreateServiceRequest_givenAnonymousWithCsrf_shouldReturnCreatedWithoutEmptyFields(final SoftAssertions softly) throws IOException {
         // given
@@ -196,8 +193,6 @@ class ServiceRequestControllerTest extends BaseControllerTest {
         softly.assertThat(error(result).getErrors()).extracting(FieldErrorRest::getField).containsOnly("client.phone");
     }
 
-    // listMyServiceRequests / getMyServiceRequest
-
     @Test
     void testListMyServiceRequests_givenNoSession_shouldReturnUnauthorized() {
         assertThat(mockMvc.get().uri(MINE_PATH).exchange()).hasStatus(HttpStatus.UNAUTHORIZED);
@@ -242,8 +237,6 @@ class ServiceRequestControllerTest extends BaseControllerTest {
         assertThat(result).hasStatus(HttpStatus.UNAUTHORIZED);
     }
 
-    // listOpenServiceRequests / getOpenServiceRequest
-
     @Test
     void testListOpenServiceRequests_givenContractor_shouldReturnListingsWithoutPersonalData(final SoftAssertions softly) throws IOException {
         // given
@@ -285,8 +278,6 @@ class ServiceRequestControllerTest extends BaseControllerTest {
         assertThat(mockMvc.get().uri(OPEN_BY_ID_PATH, REQUEST_ID).with(loggedInAs("CLIENT")).exchange())
                 .hasStatus(HttpStatus.FORBIDDEN);
     }
-
-    // listAllServiceRequests / getServiceRequest
 
     @ParameterizedTest
     @ValueSource(strings = {"CONSULTANT", "ADMIN"})

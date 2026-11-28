@@ -20,10 +20,6 @@ import java.nio.charset.StandardCharsets;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
-/**
- * Base for {@code @WebMvcTest} controller tests: the real security configuration and global error handling,
- * plus helpers to read responses so that several checks can go through {@code SoftAssertions}.
- */
 @ExtendWith(SoftAssertionsExtension.class)
 @Import({
         SecurityConfig.class,

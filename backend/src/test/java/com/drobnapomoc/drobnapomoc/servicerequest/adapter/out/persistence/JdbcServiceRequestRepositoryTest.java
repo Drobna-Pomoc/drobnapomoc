@@ -21,10 +21,6 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Reads the shared test data from {@code V1000__seed_test_data.sql}: Anna (1) owns requests 1 (NEW) and 2 (PRICED),
- * Jan (2) owns request 3 (ACCEPTED), request 4 is anonymous and expired.
- */
 @RepositoryTest
 @Import({
         JdbcServiceRequestRepository.class,

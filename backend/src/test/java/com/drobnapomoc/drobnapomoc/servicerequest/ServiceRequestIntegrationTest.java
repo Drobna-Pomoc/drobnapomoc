@@ -15,10 +15,6 @@ import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * End-to-end checks of what only the whole stack proves: the real security filter chain (session, CSRF cookie),
- * the database and JSON serialization.
- */
 class ServiceRequestIntegrationTest extends BaseIntegrationTest {
 
     private static final String CREATE_PATH = BASE_PATH + ServiceRequestsApi.PATH_CREATE_SERVICE_REQUEST;
