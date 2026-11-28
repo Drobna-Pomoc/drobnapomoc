@@ -1,9 +1,10 @@
 package com.drobnapomoc.drobnapomoc.auth.adapter.out.security;
 
 import com.drobnapomoc.drobnapomoc.auth.domain.Account;
-import com.drobnapomoc.drobnapomoc.auth.domain.AccountRole;
+import com.drobnapomoc.drobnapomoc.shared.domain.AccountRole;
 import com.drobnapomoc.drobnapomoc.auth.domain.AccountStatus;
 import com.drobnapomoc.drobnapomoc.auth.domain.exception.UnauthenticatedException;
+import com.drobnapomoc.drobnapomoc.shared.security.UserPrincipal;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;

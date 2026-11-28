@@ -6,7 +6,7 @@ import com.drobnapomoc.drobnapomoc.api.model.CurrentUserRest;
 import com.drobnapomoc.drobnapomoc.api.model.ErrorResponseRest;
 import com.drobnapomoc.drobnapomoc.api.model.LoginInputRest;
 import com.drobnapomoc.drobnapomoc.api.model.RegisterInputRest;
-import com.drobnapomoc.drobnapomoc.auth.adapter.out.security.UserPrincipal;
+import com.drobnapomoc.drobnapomoc.shared.security.UserPrincipal;
 import com.drobnapomoc.drobnapomoc.auth.application.command.LoginUserCommand;
 import com.drobnapomoc.drobnapomoc.auth.application.command.RegisterUserCommand;
 import com.drobnapomoc.drobnapomoc.auth.application.dto.CurrentUserDto;
@@ -14,7 +14,7 @@ import com.drobnapomoc.drobnapomoc.auth.application.port.in.GetCurrentUserUseCas
 import com.drobnapomoc.drobnapomoc.auth.application.port.in.LoginUserUseCase;
 import com.drobnapomoc.drobnapomoc.auth.application.port.in.LogoutUserUseCase;
 import com.drobnapomoc.drobnapomoc.auth.application.port.in.RegisterUserUseCase;
-import com.drobnapomoc.drobnapomoc.auth.domain.AccountRole;
+import com.drobnapomoc.drobnapomoc.shared.domain.AccountRole;
 import com.drobnapomoc.drobnapomoc.auth.domain.exception.AccountSuspendedException;
 import com.drobnapomoc.drobnapomoc.auth.domain.exception.EmailAlreadyTakenException;
 import com.drobnapomoc.drobnapomoc.auth.domain.exception.InvalidCredentialsException;

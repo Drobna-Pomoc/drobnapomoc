@@ -2,7 +2,7 @@ package com.drobnapomoc.drobnapomoc.auth.adapter.out.persistence;
 
 import com.drobnapomoc.drobnapomoc.TestcontainersConfiguration;
 import com.drobnapomoc.drobnapomoc.auth.domain.Account;
-import com.drobnapomoc.drobnapomoc.auth.domain.AccountRole;
+import com.drobnapomoc.drobnapomoc.shared.domain.AccountRole;
 import com.drobnapomoc.drobnapomoc.auth.domain.AccountStatus;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;

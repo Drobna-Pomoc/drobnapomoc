@@ -1,5 +1,6 @@
 package com.drobnapomoc.drobnapomoc.dictionary.application.service;
 
+import com.drobnapomoc.drobnapomoc.dictionary.application.port.in.DictionaryLookupUseCase;
 import com.drobnapomoc.drobnapomoc.dictionary.application.port.in.ListCitiesUseCase;
 import com.drobnapomoc.drobnapomoc.dictionary.application.port.in.ListServiceCategoriesUseCase;
 import com.drobnapomoc.drobnapomoc.dictionary.application.port.out.DictionaryRepository;
@@ -13,7 +14,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-class DictionaryService implements ListCitiesUseCase, ListServiceCategoriesUseCase {
+class DictionaryService implements ListCitiesUseCase, ListServiceCategoriesUseCase, DictionaryLookupUseCase {
 
     private final DictionaryRepository dictionaryRepository;
 
@@ -27,5 +28,17 @@ class DictionaryService implements ListCitiesUseCase, ListServiceCategoriesUseCa
     @Transactional(readOnly = true)
     public List<ServiceCategory> listServiceCategories() {
         return dictionaryRepository.findActiveCategories();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isCategoryActive(final long categoryId) {
+        return dictionaryRepository.isCategoryActive(categoryId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean districtExists(final long districtId) {
+        return dictionaryRepository.districtExists(districtId);
     }
 }

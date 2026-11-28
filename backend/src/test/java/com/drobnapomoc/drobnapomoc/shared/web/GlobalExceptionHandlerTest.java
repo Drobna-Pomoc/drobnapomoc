@@ -2,6 +2,7 @@ package com.drobnapomoc.drobnapomoc.shared.web;
 
 import com.drobnapomoc.drobnapomoc.api.model.ErrorResponseRest;
 import com.drobnapomoc.drobnapomoc.api.model.FieldErrorRest;
+import com.drobnapomoc.drobnapomoc.shared.domain.exception.UnauthenticatedException;
 import com.drobnapomoc.drobnapomoc.shared.security.SecurityConfig;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -67,6 +68,15 @@ class GlobalExceptionHandlerTest {
                 UNAUTHENTICATED_MESSAGE,
                 softly
         );
+    }
+
+    @Test
+    void testHandleUnauthenticated_givenSharedUnauthenticatedException_shouldReturnUnauthorized(final SoftAssertions softly) {
+        // when
+        final var result = mockMvc.get().uri("/test/unauthenticated").exchange();
+
+        // then
+        assertErrorResponse(result, HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED", UNAUTHENTICATED_MESSAGE, softly);
     }
 
     @Test
@@ -256,6 +266,11 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/test/authentication-exception")
         void authenticationException() {
             throw new BadCredentialsException(UNAUTHENTICATED_MESSAGE);
+        }
+
+        @GetMapping("/test/unauthenticated")
+        void unauthenticated() {
+            throw new UnauthenticatedException();
         }
 
         @GetMapping("/test/csrf")

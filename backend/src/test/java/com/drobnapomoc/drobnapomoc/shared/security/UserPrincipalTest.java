@@ -1,6 +1,7 @@
-package com.drobnapomoc.drobnapomoc.auth.adapter.out.security;
+package com.drobnapomoc.drobnapomoc.shared.security;
 
-import com.drobnapomoc.drobnapomoc.auth.domain.AccountRole;
+import com.drobnapomoc.drobnapomoc.shared.domain.AccountRole;
+
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;

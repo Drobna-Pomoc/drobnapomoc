@@ -1,6 +1,6 @@
 package com.drobnapomoc.drobnapomoc.auth.application.dto;
 
-import com.drobnapomoc.drobnapomoc.auth.domain.AccountRole;
+import com.drobnapomoc.drobnapomoc.shared.domain.AccountRole;
 
 import java.util.Objects;
 import java.util.Set;

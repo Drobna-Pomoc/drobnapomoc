@@ -1,5 +1,7 @@
 package com.drobnapomoc.drobnapomoc.auth.domain;
 
+import com.drobnapomoc.drobnapomoc.shared.domain.AccountRole;
+
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Nested;

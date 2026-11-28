@@ -51,4 +51,29 @@ class JdbcDictionaryRepositoryTest {
                 new ServiceCategory(1L, "Hydraulik")
         );
     }
+
+    @Test
+    void testIsCategoryActive_givenActiveCategory_shouldReturnTrue() {
+        assertThat(repository.isCategoryActive(1L)).isTrue();
+    }
+
+    @Test
+    void testIsCategoryActive_givenInactiveCategory_shouldReturnFalse() {
+        assertThat(repository.isCategoryActive(3L)).isFalse();
+    }
+
+    @Test
+    void testIsCategoryActive_givenMissingCategory_shouldReturnFalse() {
+        assertThat(repository.isCategoryActive(999_999L)).isFalse();
+    }
+
+    @Test
+    void testDistrictExists_givenExistingDistrict_shouldReturnTrue() {
+        assertThat(repository.districtExists(1L)).isTrue();
+    }
+
+    @Test
+    void testDistrictExists_givenMissingDistrict_shouldReturnFalse() {
+        assertThat(repository.districtExists(999_999L)).isFalse();
+    }
 }

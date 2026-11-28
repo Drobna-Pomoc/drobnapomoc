@@ -1,5 +1,6 @@
 package com.drobnapomoc.drobnapomoc.dictionary.adapter.in.web;
 
+import com.drobnapomoc.drobnapomoc.BaseControllerTest;
 import com.drobnapomoc.drobnapomoc.api.DictionariesApi;
 import com.drobnapomoc.drobnapomoc.api.DictionariesApiController;
 import com.drobnapomoc.drobnapomoc.api.model.CityRest;
@@ -10,41 +11,25 @@ import com.drobnapomoc.drobnapomoc.dictionary.application.port.in.ListServiceCat
 import com.drobnapomoc.drobnapomoc.dictionary.domain.City;
 import com.drobnapomoc.drobnapomoc.dictionary.domain.District;
 import com.drobnapomoc.drobnapomoc.dictionary.domain.ServiceCategory;
-import com.drobnapomoc.drobnapomoc.shared.security.RestAccessDeniedHandler;
-import com.drobnapomoc.drobnapomoc.shared.security.RestAuthenticationEntryPoint;
-import com.drobnapomoc.drobnapomoc.shared.security.SecurityConfig;
-import com.drobnapomoc.drobnapomoc.shared.web.GlobalExceptionHandler;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.assertj.MockMvcTester;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
 @WebMvcTest(DictionariesApiController.class)
 @Import({
         DictionariesApiDelegateImpl.class,
-        DictionaryWebMapperImpl.class,
-        SecurityConfig.class,
-        RestAuthenticationEntryPoint.class,
-        RestAccessDeniedHandler.class,
-        GlobalExceptionHandler.class
+        DictionaryWebMapperImpl.class
 })
-class DictionariesControllerTest {
+class DictionariesControllerTest extends BaseControllerTest {
 
-    /** Prefix from {@code openapi.dictionaries.base-path}; the generated path constants don't include it. */
-    private static final String BASE_PATH = "/v1";
     private static final String CITIES_PATH = BASE_PATH + DictionariesApi.PATH_LIST_CITIES;
     private static final String CATEGORIES_PATH = BASE_PATH + DictionariesApi.PATH_LIST_SERVICE_CATEGORIES;
-
-    @Autowired
-    private MockMvcTester mockMvc;
 
     @MockitoBean
     private ListCitiesUseCase listCitiesUseCase;
@@ -107,7 +92,7 @@ class DictionariesControllerTest {
 
         // when
         final var result = mockMvc.get().uri(CATEGORIES_PATH)
-                .with(user("anna@example.com").roles("CONTRACTOR"))
+                .with(loggedInAs("CONTRACTOR"))
                 .exchange();
 
         // then

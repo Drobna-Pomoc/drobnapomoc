@@ -2,7 +2,7 @@ package com.drobnapomoc.drobnapomoc.auth.adapter.out.persistence;
 
 import com.drobnapomoc.drobnapomoc.auth.application.port.out.AccountRepository;
 import com.drobnapomoc.drobnapomoc.auth.domain.Account;
-import com.drobnapomoc.drobnapomoc.auth.domain.AccountRole;
+import com.drobnapomoc.drobnapomoc.shared.domain.AccountRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;

@@ -4,7 +4,7 @@ import com.drobnapomoc.drobnapomoc.api.model.AccountRoleRest;
 import com.drobnapomoc.drobnapomoc.api.model.LoginInputRest;
 import com.drobnapomoc.drobnapomoc.api.model.RegisterInputRest;
 import com.drobnapomoc.drobnapomoc.auth.application.dto.CurrentUserDto;
-import com.drobnapomoc.drobnapomoc.auth.domain.AccountRole;
+import com.drobnapomoc.drobnapomoc.shared.domain.AccountRole;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
 import org.junit.jupiter.api.Test;
